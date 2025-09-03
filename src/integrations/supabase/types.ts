@@ -14,16 +14,333 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      client_timelines: {
+        Row: {
+          client_id: string
+          created_at: string
+          end_date: string
+          id: string
+          name: string
+          start_date: string
+          template_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          end_date: string
+          id?: string
+          name: string
+          start_date: string
+          template_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          end_date?: string
+          id?: string
+          name?: string
+          start_date?: string
+          template_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_timelines_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_timelines_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "timeline_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documents: {
+        Row: {
+          client_id: string
+          file_type: string | null
+          file_url: string
+          id: string
+          timeline_item_id: string | null
+          title: string
+          uploaded_at: string
+        }
+        Insert: {
+          client_id: string
+          file_type?: string | null
+          file_url: string
+          id?: string
+          timeline_item_id?: string | null
+          title: string
+          uploaded_at?: string
+        }
+        Update: {
+          client_id?: string
+          file_type?: string | null
+          file_url?: string
+          id?: string
+          timeline_item_id?: string | null
+          title?: string
+          uploaded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documents_timeline_item_id_fkey"
+            columns: ["timeline_item_id"]
+            isOneToOne: false
+            referencedRelation: "timeline_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      indications: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          indicated_email: string | null
+          indicated_name: string
+          indicated_phone: string | null
+          points_awarded: number | null
+          status: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          indicated_email?: string | null
+          indicated_name: string
+          indicated_phone?: string | null
+          points_awarded?: number | null
+          status?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          indicated_email?: string | null
+          indicated_name?: string
+          indicated_phone?: string | null
+          points_awarded?: number | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "indications_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          company_logo_url: string | null
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          points: number
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
+        }
+        Insert: {
+          company_logo_url?: string | null
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id: string
+          points?: number
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
+        Update: {
+          company_logo_url?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          points?: number
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      timeline_items: {
+        Row: {
+          client_timeline_id: string
+          created_at: string
+          description: string | null
+          due_date: string
+          id: string
+          progress_status:
+            | Database["public"]["Enums"]["timeline_progress_status"]
+            | null
+          status: Database["public"]["Enums"]["timeline_item_status"]
+          template_item_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          client_timeline_id: string
+          created_at?: string
+          description?: string | null
+          due_date: string
+          id?: string
+          progress_status?:
+            | Database["public"]["Enums"]["timeline_progress_status"]
+            | null
+          status?: Database["public"]["Enums"]["timeline_item_status"]
+          template_item_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          client_timeline_id?: string
+          created_at?: string
+          description?: string | null
+          due_date?: string
+          id?: string
+          progress_status?:
+            | Database["public"]["Enums"]["timeline_progress_status"]
+            | null
+          status?: Database["public"]["Enums"]["timeline_item_status"]
+          template_item_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timeline_items_client_timeline_id_fkey"
+            columns: ["client_timeline_id"]
+            isOneToOne: false
+            referencedRelation: "client_timelines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timeline_items_template_item_id_fkey"
+            columns: ["template_item_id"]
+            isOneToOne: false
+            referencedRelation: "timeline_template_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      timeline_template_items: {
+        Row: {
+          category: Database["public"]["Enums"]["template_item_category"]
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          parent_id: string | null
+          template_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["template_item_category"]
+          created_at?: string
+          description?: string | null
+          display_order: number
+          id?: string
+          parent_id?: string | null
+          template_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["template_item_category"]
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          parent_id?: string | null
+          template_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timeline_template_items_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "timeline_template_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timeline_template_items_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "timeline_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      timeline_templates: {
+        Row: {
+          created_at: string
+          description: string | null
+          duration_months: number
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          duration_months: number
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          duration_months?: number
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      template_item_category:
+        | "FASE"
+        | "MES"
+        | "FOCO"
+        | "ENTREGAVEL"
+        | "SESSAO"
+        | "CONSULTORIA"
+        | "TREINAMENTO"
+      timeline_item_status: "PENDENTE" | "EM_ANDAMENTO" | "CONCLUIDO"
+      timeline_progress_status: "NO_PRAZO" | "ADIANTADO" | "ATRASADO"
+      user_role: "ADMIN" | "CLIENTE"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +467,19 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      template_item_category: [
+        "FASE",
+        "MES",
+        "FOCO",
+        "ENTREGAVEL",
+        "SESSAO",
+        "CONSULTORIA",
+        "TREINAMENTO",
+      ],
+      timeline_item_status: ["PENDENTE", "EM_ANDAMENTO", "CONCLUIDO"],
+      timeline_progress_status: ["NO_PRAZO", "ADIANTADO", "ATRASADO"],
+      user_role: ["ADMIN", "CLIENTE"],
+    },
   },
 } as const
