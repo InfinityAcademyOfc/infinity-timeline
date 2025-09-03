@@ -3,9 +3,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Trophy, Target, Gift, Clock } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Trophy, Target, Gift, Clock, Calendar } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { Link } from 'react-router-dom';
 
 const ClientDashboard = () => {
   const { user } = useAuth();
@@ -173,6 +175,15 @@ const ClientDashboard = () => {
                     </div>
                   );
                 })}
+              </div>
+              
+              <div className="mt-6 text-center">
+                <Link to="/timeline">
+                  <Button size="lg" className="bg-gradient-primary hover:bg-primary-hover shadow-lg">
+                    <Calendar className="h-5 w-5 mr-2" />
+                    Ver Cronograma Interativo
+                  </Button>
+                </Link>
               </div>
             </CardContent>
           </Card>

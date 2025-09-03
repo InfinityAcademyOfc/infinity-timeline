@@ -181,6 +181,33 @@ export type Database = {
         }
         Relationships: []
       }
+      timeline_comments: {
+        Row: {
+          author_id: string
+          content: string
+          created_at: string
+          id: string
+          timeline_item_id: string
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          content: string
+          created_at?: string
+          id?: string
+          timeline_item_id: string
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          timeline_item_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       timeline_items: {
         Row: {
           client_timeline_id: string
