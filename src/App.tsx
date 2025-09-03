@@ -17,6 +17,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminClients from "./pages/admin/AdminClients";
 import AdminTemplates from "./pages/admin/AdminTemplates";
 import AdminTimelines from "./pages/admin/AdminTimelines";
+import AdminClientDetails from "./pages/admin/AdminClientDetails";
 
 // Client Pages
 import ClientDashboard from "./pages/client/ClientDashboard";
@@ -62,6 +63,11 @@ const App = () => (
               <Route path="/admin/timelines" element={
                 <ProtectedRoute requireAdmin>
                   <AdminTimelines />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/clients/:clientId" element={
+                <ProtectedRoute requireAdmin>
+                  <AdminClientDetails />
                 </ProtectedRoute>
               } />
 

@@ -1,0 +1,343 @@
+import { useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { SEOHelmet } from '@/components/SEOHelmet';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { useToast } from '@/hooks/use-toast';
+import { User, Calendar as CalendarIcon, Trophy, AlertCircle, Settings } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+
+const AdminClientDetails = () => {
+  const { clientId } = useParams<{ clientId: string }>();
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+  const [startDate, setStartDate] = useState<Date>();
+  const [isAssigning, setIsAssigning] = useState(false);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const { data: client, isLoading: clientLoading } = useQuery({
+    queryKey: ['client-details', clientId],
+    queryFn: async () => {
+      if (!clientId) throw new Error('Client ID is required');
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select(`
+          *,
+          client_timelines(
+            id,
+            name,
+            start_date,
+            end_date,
+            template_id,
+            timeline_items(count)
+          )
+        `)
+        .eq('id', clientId)
+        .eq('role', 'CLIENTE')
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!clientId,
+  });
+
+  const { data: templates } = useQuery({
+    queryKey: ['timeline-templates-select'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('timeline_templates')
+        .select('id, name, duration_months')
+        .order('name');
+      
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  const assignTimelineMutation = useMutation({
+    mutationFn: async (assignmentData: { clientId: string; templateId: string; startDate: string }) => {
+      const { data, error } = await supabase.functions.invoke('assign-timeline', {
+        body: assignmentData
+      });
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast({
+        title: "Cronograma atribuído com sucesso!",
+        description: "O cronograma foi criado e o cliente pode começar sua jornada."
+      });
+      queryClient.invalidateQueries({ queryKey: ['client-details', clientId] });
+      setIsAssignModalOpen(false);
+      setSelectedTemplateId('');
+      setStartDate(undefined);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao atribuir cronograma",
+        description: error.message || "Não foi possível atribuir o cronograma.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleAssignTimeline = async () => {
+    if (!selectedTemplateId || !startDate) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Por favor, selecione um template e uma data de início.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!clientId) return;
+
+    setIsAssigning(true);
+    try {
+      await assignTimelineMutation.mutateAsync({
+        clientId,
+        templateId: selectedTemplateId,
+        startDate: startDate.toISOString().split('T')[0]
+      });
+    } finally {
+      setIsAssigning(false);
+    }
+  };
+
+  if (clientLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (!client) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardContent className="pt-6 text-center">
+            <AlertCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-lg font-semibold mb-2">Cliente não encontrado</h3>
+            <p className="text-muted-foreground">O cliente solicitado não foi encontrado ou não existe.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const hasActiveTimeline = client.client_timelines && client.client_timelines.length > 0;
+  const activeTimeline = hasActiveTimeline ? client.client_timelines[0] : null;
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 p-6">
+      <SEOHelmet 
+        title={`Cliente: ${client.full_name || client.email}`} 
+        description="Detalhes do cliente e gerenciamento de cronogramas."
+      />
+      
+      <div className="max-w-4xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+              {client.full_name || 'Cliente'}
+            </h1>
+            <p className="text-muted-foreground text-lg">{client.email}</p>
+          </div>
+        </div>
+
+        {/* Informações do Cliente */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="border-0 shadow-xl bg-gradient-to-br from-card to-card/80 backdrop-blur-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Informações</CardTitle>
+              <User className="h-4 w-4 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold mb-2">{client.full_name || 'N/A'}</div>
+              <p className="text-xs text-muted-foreground">
+                Cadastrado em {new Date(client.created_at).toLocaleDateString()}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-xl bg-gradient-to-br from-card to-card/80 backdrop-blur-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pontuação</CardTitle>
+              <Trophy className="h-4 w-4 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold mb-2">{client.points} pts</div>
+              <Badge variant={client.points >= 100 ? "default" : "secondary"}>
+                {client.points >= 100 ? "Nível Avançado" : "Nível Inicial"}
+              </Badge>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-xl bg-gradient-to-br from-card to-card/80 backdrop-blur-sm">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Status</CardTitle>
+              <Settings className="h-4 w-4 text-primary" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold mb-2">
+                {hasActiveTimeline ? 'Ativo' : 'Inativo'}
+              </div>
+              <Badge variant={hasActiveTimeline ? "default" : "outline"}>
+                {hasActiveTimeline ? 'Com Cronograma' : 'Sem Cronograma'}
+              </Badge>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Cronograma */}
+        <Card className="border-0 shadow-xl bg-gradient-to-br from-card to-card/80 backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <CalendarIcon className="h-5 w-5 text-primary" />
+              Cronograma do Cliente
+            </CardTitle>
+            <CardDescription>
+              Gestão e acompanhamento do cronograma do cliente
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {!hasActiveTimeline ? (
+              <div className="text-center py-12">
+                <AlertCircle className="h-16 w-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+                <h3 className="text-xl font-semibold mb-2">Nenhum cronograma ativo</h3>
+                <p className="text-muted-foreground mb-6">
+                  Este cliente ainda não possui um cronograma atribuído. Atribua um template para começar sua jornada.
+                </p>
+                
+                <Dialog open={isAssignModalOpen} onOpenChange={setIsAssignModalOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="lg" className="bg-gradient-primary hover:bg-primary-hover">
+                      <CalendarIcon className="h-5 w-5 mr-2" />
+                      Atribuir Cronograma
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Atribuir Cronograma</DialogTitle>
+                      <DialogDescription>
+                        Selecione um template e defina a data de início do projeto
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="template">Selecione o Modelo de Cronograma</Label>
+                        <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Escolha um template..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {templates?.map((template) => (
+                              <SelectItem key={template.id} value={template.id}>
+                                {template.name} ({template.duration_months} meses)
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Data de Início</Label>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !startDate && "text-muted-foreground"
+                              )}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {startDate ? format(startDate, "dd/MM/yyyy") : "Selecione uma data"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={startDate}
+                              onSelect={setStartDate}
+                              initialFocus
+                              className={cn("p-3 pointer-events-auto")}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      
+                      <div className="flex justify-end gap-2">
+                        <Button variant="outline" onClick={() => setIsAssignModalOpen(false)}>
+                          Cancelar
+                        </Button>
+                        <Button 
+                          onClick={handleAssignTimeline}
+                          disabled={isAssigning}
+                        >
+                          {isAssigning ? 'Atribuindo...' : 'Atribuir Cronograma'}
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="font-semibold mb-2">Cronograma Ativo</h4>
+                    <p className="text-2xl font-bold text-primary">{activeTimeline?.name}</p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-2">Progresso</h4>
+                    <p className="text-lg">
+                      {activeTimeline?.timeline_items?.[0]?.count || 0} itens no cronograma
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Data de Início</Label>
+                    <p className="font-medium">
+                      {new Date(activeTimeline?.start_date).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-muted-foreground">Data de Término</Label>
+                    <p className="font-medium">
+                      {new Date(activeTimeline?.end_date).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+                
+                <Badge className="mt-4" variant="default">
+                  Cronograma Ativo
+                </Badge>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
+export default AdminClientDetails;
