@@ -24,6 +24,7 @@ import ClientDashboard from "./pages/client/ClientDashboard";
 import ClientTimeline from "./pages/client/ClientTimeline";
 import ClientDocuments from "./pages/client/ClientDocuments";
 import ClientIndications from "./pages/client/ClientIndications";
+import ClientProgress from "./pages/client/ClientProgress";
 
 const queryClient = new QueryClient();
 
@@ -100,6 +101,21 @@ const App = () => (
               <Route path="/cliente/indicacoes" element={
                 <ProtectedRoute>
                   <ClientIndications />
+                </ProtectedRoute>
+              } />
+              <Route path="/documents" element={
+                <ProtectedRoute>
+                  <ClientDocuments />
+                </ProtectedRoute>
+              } />
+              <Route path="/progress" element={
+                <ProtectedRoute>
+                  <ClientProgress />
+                </ProtectedRoute>
+              } />
+              <Route path="/cliente/progresso" element={
+                <ProtectedRoute>
+                  <ClientProgress />
                 </ProtectedRoute>
               } />
 

@@ -9,8 +9,9 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { User, Calendar as CalendarIcon, Trophy, AlertCircle, Settings } from 'lucide-react';
+import { User, Calendar as CalendarIcon, Trophy, AlertCircle, Settings, CheckCircle, Clock, XCircle } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
@@ -64,6 +65,61 @@ const AdminClientDetails = () => {
       if (error) throw error;
       return data || [];
     },
+  });
+
+  const hasActiveTimeline = client?.client_timelines && client.client_timelines.length > 0;
+  const activeTimeline = hasActiveTimeline ? client.client_timelines[0] : null;
+
+  // Fetch timeline items if there's an active timeline
+  const { data: timelineItems, isLoading: timelineItemsLoading } = useQuery({
+    queryKey: ['timeline-items', clientId, activeTimeline?.id],
+    queryFn: async () => {
+      if (!activeTimeline?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('timeline_items')
+        .select('*')
+        .eq('client_timeline_id', activeTimeline.id)
+        .order('due_date');
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!activeTimeline?.id,
+  });
+
+  const updateProgressMutation = useMutation({
+    mutationFn: async ({ timelineItemId, progressStatus, extraPoints }: { 
+      timelineItemId: string; 
+      progressStatus: string; 
+      extraPoints?: number 
+    }) => {
+      const { data, error } = await supabase.functions.invoke('update-timeline-progress', {
+        body: {
+          timeline_item_id: timelineItemId,
+          progress_status: progressStatus,
+          extra_points: extraPoints || 0
+        }
+      });
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Progresso atualizado!",
+        description: `Status atualizado com sucesso. ${data.pointsAdded} pontos adicionados.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['client-details', clientId] });
+      queryClient.invalidateQueries({ queryKey: ['timeline-items', clientId] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro ao atualizar progresso",
+        description: error.message || "Não foi possível atualizar o progresso.",
+        variant: "destructive"
+      });
+    }
   });
 
   const assignTimelineMutation = useMutation({
@@ -139,9 +195,6 @@ const AdminClientDetails = () => {
       </div>
     );
   }
-
-  const hasActiveTimeline = client.client_timelines && client.client_timelines.length > 0;
-  const activeTimeline = hasActiveTimeline ? client.client_timelines[0] : null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 p-6">
@@ -335,8 +388,187 @@ const AdminClientDetails = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Timeline Items Management - Only show if there's an active timeline */}
+        {hasActiveTimeline && (
+          <Card className="border-0 shadow-xl bg-gradient-to-br from-card to-card/80 backdrop-blur-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5 text-primary" />
+                Gerenciamento de Progresso
+              </CardTitle>
+              <CardDescription>
+                Atualize o status dos itens do cronograma e gerencie a pontuação do cliente
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {timelineItemsLoading ? (
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, i) => (
+                    <Card key={i} className="animate-pulse">
+                      <CardContent className="p-4">
+                        <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                        <div className="h-3 bg-muted rounded w-1/2"></div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : !timelineItems || timelineItems.length === 0 ? (
+                <div className="text-center py-8">
+                  <Clock className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                  <p className="text-muted-foreground">Nenhum item encontrado no cronograma.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {timelineItems.map((item) => (
+                    <TimelineItemCard 
+                      key={item.id} 
+                      item={item} 
+                      onUpdateProgress={updateProgressMutation.mutate}
+                      isUpdating={updateProgressMutation.isPending}
+                    />
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
+  );
+};
+
+// Timeline Item Card Component
+const TimelineItemCard = ({ 
+  item, 
+  onUpdateProgress, 
+  isUpdating 
+}: { 
+  item: any; 
+  onUpdateProgress: (data: { timelineItemId: string; progressStatus: string; extraPoints?: number }) => void;
+  isUpdating: boolean;
+}) => {
+  const [selectedStatus, setSelectedStatus] = useState(item.progress_status || '');
+  const [extraPoints, setExtraPoints] = useState(0);
+  const [showExtraPoints, setShowExtraPoints] = useState(false);
+
+  const handleStatusChange = (newStatus: string) => {
+    setSelectedStatus(newStatus);
+    setShowExtraPoints(newStatus === 'ADIANTADO');
+    
+    // Auto-update when status changes
+    onUpdateProgress({
+      timelineItemId: item.id,
+      progressStatus: newStatus,
+      extraPoints: newStatus === 'ADIANTADO' ? extraPoints : 0
+    });
+  };
+
+  const handleExtraPointsUpdate = () => {
+    if (selectedStatus === 'ADIANTADO') {
+      onUpdateProgress({
+        timelineItemId: item.id,
+        progressStatus: selectedStatus,
+        extraPoints: extraPoints
+      });
+    }
+  };
+
+  const getStatusIcon = (status: string | null) => {
+    switch (status) {
+      case 'NO_PRAZO':
+        return <CheckCircle className="w-4 h-4 text-green-500" />;
+      case 'ADIANTADO':
+        return <Trophy className="w-4 h-4 text-blue-500" />;
+      case 'ATRASADO':
+        return <XCircle className="w-4 h-4 text-red-500" />;
+      default:
+        return <Clock className="w-4 h-4 text-gray-400" />;
+    }
+  };
+
+  const getStatusBadgeVariant = (status: string | null) => {
+    switch (status) {
+      case 'NO_PRAZO':
+        return 'default';
+      case 'ADIANTADO':
+        return 'default';
+      case 'ATRASADO':
+        return 'destructive';
+      default:
+        return 'secondary';
+    }
+  };
+
+  return (
+    <Card className="border border-muted">
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              {getStatusIcon(item.progress_status)}
+              <h4 className="font-semibold">{item.title}</h4>
+              <Badge variant={getStatusBadgeVariant(item.progress_status)}>
+                {item.status}
+              </Badge>
+            </div>
+            
+            {item.description && (
+              <p className="text-sm text-muted-foreground mb-3">{item.description}</p>
+            )}
+            
+            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+              <span>Prazo: {new Date(item.due_date).toLocaleDateString('pt-BR')}</span>
+              {item.progress_status && (
+                <Badge variant="outline" className="text-xs">
+                  {item.progress_status.replace('_', ' ')}
+                </Badge>
+              )}
+            </div>
+          </div>
+          
+          <div className="flex flex-col gap-2 min-w-[200px]">
+            <Label className="text-xs font-medium">Status do Progresso</Label>
+            <Select
+              value={selectedStatus}
+              onValueChange={handleStatusChange}
+              disabled={isUpdating}
+            >
+              <SelectTrigger className="h-8">
+                <SelectValue placeholder="Selecionar status..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="NO_PRAZO">No Prazo (25 pts)</SelectItem>
+                <SelectItem value="ADIANTADO">Adiantado (25 + extra)</SelectItem>
+                <SelectItem value="ATRASADO">Atrasado (0 pts)</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            {showExtraPoints && selectedStatus === 'ADIANTADO' && (
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  placeholder="Pts extra"
+                  value={extraPoints}
+                  onChange={(e) => setExtraPoints(parseInt(e.target.value) || 0)}
+                  className="h-8"
+                  min="0"
+                  max="50"
+                />
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={handleExtraPointsUpdate}
+                  disabled={isUpdating}
+                >
+                  Aplicar
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

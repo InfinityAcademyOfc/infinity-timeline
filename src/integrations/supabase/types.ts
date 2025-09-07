@@ -14,6 +14,91 @@ export type Database = {
   }
   public: {
     Tables: {
+      client_kpis: {
+        Row: {
+          cac: number | null
+          client_id: string
+          created_at: string | null
+          id: string
+          leads_generated: number | null
+          ltv: number | null
+          report_date: string
+          sales_count: number | null
+          summary: string | null
+          title: string
+        }
+        Insert: {
+          cac?: number | null
+          client_id: string
+          created_at?: string | null
+          id?: string
+          leads_generated?: number | null
+          ltv?: number | null
+          report_date: string
+          sales_count?: number | null
+          summary?: string | null
+          title: string
+        }
+        Update: {
+          cac?: number | null
+          client_id?: string
+          created_at?: string | null
+          id?: string
+          leads_generated?: number | null
+          ltv?: number | null
+          report_date?: string
+          sales_count?: number | null
+          summary?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_kpis_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      client_requests: {
+        Row: {
+          client_id: string
+          created_at: string | null
+          details: string | null
+          id: string
+          request_type: string | null
+          status: string | null
+          title: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string | null
+          details?: string | null
+          id?: string
+          request_type?: string | null
+          status?: string | null
+          title: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string | null
+          details?: string | null
+          id?: string
+          request_type?: string | null
+          status?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_requests_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_timelines: {
         Row: {
           client_id: string
