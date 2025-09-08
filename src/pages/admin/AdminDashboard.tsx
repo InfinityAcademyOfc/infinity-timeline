@@ -8,6 +8,7 @@ import { Users, Calendar, Settings, Plus } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
+import { NotificationBell } from '@/components/NotificationBell';
 
 const AdminDashboard = () => {
   const { data: clients, isLoading } = useQuery({
@@ -70,12 +71,15 @@ const AdminDashboard = () => {
             </p>
           </div>
           
-          <Link to="/admin/timelines">
-            <Button size="lg" className="bg-gradient-primary hover:bg-primary-hover shadow-lg">
-              <Calendar className="h-5 w-5 mr-2" />
-              Gerenciar Cronogramas
-            </Button>
-          </Link>
+          <div className="flex items-center gap-4">
+            <NotificationBell />
+            <Link to="/admin/timelines">
+              <Button size="lg" className="bg-gradient-primary hover:bg-primary-hover shadow-lg">
+                <Calendar className="h-5 w-5 mr-2" />
+                Gerenciar Cronogramas
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Cards de Estatísticas */}

@@ -78,17 +78,8 @@ serve(async (req) => {
 
     console.log('Points to add:', pointsToAdd);
 
-    // Update client points if any points to add
-    if (pointsToAdd > 0) {
-      const { error: pointsError } = await supabaseAdmin
-        .rpc('increment_user_points', {
-          user_id: clientId,
-          points_to_add: pointsToAdd
-        });
-
-      if (pointsError) {
-        // If the RPC doesn't exist, try direct update
-        console.log('RPC not found, trying direct update');
+      // Update client points if any points to add
+      if (pointsToAdd > 0) {
         const { data: currentProfile } = await supabaseAdmin
           .from('profiles')
           .select('points')
@@ -105,10 +96,33 @@ serve(async (req) => {
         if (directUpdateError) {
           throw directUpdateError;
         }
-      }
 
-      console.log('Points updated successfully');
-    }
+        // Insert into point history
+        let reason = '';
+        switch (progress_status) {
+          case 'NO_PRAZO':
+            reason = 'Tarefa Concluída no Prazo';
+            break;
+          case 'ADIANTADO':
+            reason = 'Tarefa Concluída Adiantada';
+            break;
+        }
+
+        const { error: historyError } = await supabaseAdmin
+          .from('point_history')
+          .insert({
+            client_id: clientId,
+            points_change: pointsToAdd,
+            reason: reason
+          });
+
+        if (historyError) {
+          console.error('Error inserting point history:', historyError);
+          // Don't throw error, just log it as history is supplemental
+        }
+
+        console.log('Points updated successfully');
+      }
 
     return new Response(
       JSON.stringify({

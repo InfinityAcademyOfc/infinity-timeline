@@ -8,6 +8,7 @@ import { Trophy, Target, Gift, Clock, Calendar } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
+import { NotificationBell } from '@/components/NotificationBell';
 
 const ClientDashboard = () => {
   const { user } = useAuth();
@@ -77,13 +78,16 @@ const ClientDashboard = () => {
       />
       
       <div className="max-w-7xl mx-auto space-y-8">
-        <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            Bem-vindo, {profile?.full_name || 'Cliente'}!
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            Acompanhe seu progresso e conquistas
-          </p>
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+              Bem-vindo, {profile?.full_name || 'Cliente'}!
+            </h1>
+            <p className="text-muted-foreground text-lg">
+              Acompanhe seu progresso e conquistas
+            </p>
+          </div>
+          <NotificationBell />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

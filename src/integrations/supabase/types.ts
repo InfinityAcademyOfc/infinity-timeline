@@ -233,6 +233,73 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string | null
+          id: number
+          is_read: boolean | null
+          link_to: string | null
+          message: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: number
+          is_read?: boolean | null
+          link_to?: string | null
+          message: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: number
+          is_read?: boolean | null
+          link_to?: string | null
+          message?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      point_history: {
+        Row: {
+          client_id: string
+          created_at: string | null
+          id: number
+          points_change: number
+          reason: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string | null
+          id?: number
+          points_change: number
+          reason: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string | null
+          id?: number
+          points_change?: number
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "point_history_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           company_logo_url: string | null
@@ -240,6 +307,8 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          notify_on_comment: boolean | null
+          notify_on_progress: boolean | null
           points: number
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
@@ -250,6 +319,8 @@ export type Database = {
           email: string
           full_name?: string | null
           id: string
+          notify_on_comment?: boolean | null
+          notify_on_progress?: boolean | null
           points?: number
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
@@ -260,6 +331,8 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          notify_on_comment?: boolean | null
+          notify_on_progress?: boolean | null
           points?: number
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string

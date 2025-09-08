@@ -25,6 +25,10 @@ import ClientTimeline from "./pages/client/ClientTimeline";
 import ClientDocuments from "./pages/client/ClientDocuments";
 import ClientIndications from "./pages/client/ClientIndications";
 import ClientProgress from "./pages/client/ClientProgress";
+import ClientSettings from "./pages/client/ClientSettings";
+
+// Admin Settings
+import AdminSettings from "./pages/admin/AdminSettings";
 
 const queryClient = new QueryClient();
 
@@ -116,6 +120,17 @@ const App = () => (
               <Route path="/cliente/progresso" element={
                 <ProtectedRoute>
                   <ClientProgress />
+                </ProtectedRoute>
+              } />
+
+              <Route path="/settings" element={
+                <ProtectedRoute>
+                  <ClientSettings />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/settings" element={
+                <ProtectedRoute requireAdmin>
+                  <AdminSettings />
                 </ProtectedRoute>
               } />
 
