@@ -18,6 +18,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { IndicationsTab } from '@/components/admin/IndicationsTab';
+import { DocumentsTab } from '@/components/admin/DocumentsTab';
 
 const AdminClientDetails = () => {
   const { clientId } = useParams<{ clientId: string }>();
@@ -390,6 +391,69 @@ const AdminClientDetails = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Tabs Section */}
+        {hasActiveTimeline && (
+          <Tabs defaultValue="progress" className="space-y-6">
+            <TabsList>
+              <TabsTrigger value="progress">Progresso</TabsTrigger>
+              <TabsTrigger value="indications">Indicações</TabsTrigger>
+              <TabsTrigger value="documents">Documentos</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="progress">
+              <Card className="border-0 shadow-xl bg-gradient-card backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings className="h-5 w-5 text-primary" />
+                    Gerenciamento de Progresso
+                  </CardTitle>
+                  <CardDescription>
+                    Atualize o status dos itens do cronograma e gerencie a pontuação do cliente
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {timelineItemsLoading ? (
+                    <div className="space-y-4">
+                      {[...Array(3)].map((_, i) => (
+                        <Card key={i} className="animate-pulse">
+                          <CardContent className="p-4">
+                            <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                            <div className="h-3 bg-muted rounded w-1/2"></div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : !timelineItems || timelineItems.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Clock className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                      <p className="text-muted-foreground">Nenhum item encontrado no cronograma.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {timelineItems.map((item) => (
+                        <TimelineItemCard 
+                          key={item.id} 
+                          item={item} 
+                          onUpdateProgress={updateProgressMutation.mutate}
+                          isUpdating={updateProgressMutation.isPending}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="indications">
+              <IndicationsTab clientId={clientId!} />
+            </TabsContent>
+
+            <TabsContent value="documents">
+              <DocumentsTab clientId={clientId!} />
+            </TabsContent>
+          </Tabs>
+        )}
 
         {/* Timeline Items Management - Only show if there's an active timeline */}
         {hasActiveTimeline && (

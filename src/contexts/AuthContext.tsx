@@ -41,16 +41,27 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Fetch user profile after auth state change
+        // Fetch user profile and roles after auth state change
         if (session?.user) {
           setTimeout(async () => {
             try {
+              // Fetch profile
               const { data: profile } = await supabase
                 .from('profiles')
                 .select('*')
                 .eq('id', session.user.id)
                 .single();
-              setUserProfile(profile);
+              
+              // Fetch user roles
+              const { data: roles } = await supabase
+                .from('user_roles')
+                .select('role')
+                .eq('user_id', session.user.id);
+              
+              setUserProfile({
+                ...profile,
+                roles: roles || []
+              });
             } catch (error) {
               console.error('Error fetching profile:', error);
             }
@@ -159,7 +170,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const isAdmin = userProfile?.role === 'ADMIN';
+  // Check if user has ADMIN role
+  const isAdmin = userProfile?.roles?.some((r: any) => r.role === 'ADMIN') || false;
 
   const value = {
     user,

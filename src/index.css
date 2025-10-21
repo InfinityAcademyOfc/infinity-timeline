@@ -2,53 +2,48 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Infinity Timeline Design System - Blue Theme with Professional Gradients */
+/* Infinity Timeline - Dark Cyberpunk Theme */
 
 @layer base {
   :root {
-    /* Base colors - Professional Blue Theme */
-    --background: 0 0% 100%;
-    --foreground: 215 25% 27%;
+    /* Dark Cyberpunk - Deep Blue Almost Black */
+    --background: 220 25% 8%;           /* Azul escuro quase preto */
+    --foreground: 210 40% 98%;          /* Branco azulado */
 
-    /* Card system */
-    --card: 0 0% 100%;
-    --card-foreground: 215 25% 27%;
+    --card: 220 25% 10%;                /* Card azul escuro */
+    --card-foreground: 210 40% 98%;
 
-    /* Popover system */
-    --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 27%;
+    --popover: 220 25% 10%;
+    --popover-foreground: 210 40% 98%;
 
-    /* Primary - Professional Blue */
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 100%;
-    --primary-glow: 220 100% 70%;
-    --primary-hover: 217 91% 55%;
+    /* Primary - Neon Blue */
+    --primary: 217 91% 65%;             /* Azul neon */
+    --primary-foreground: 220 25% 5%;
+    --primary-glow: 220 100% 75%;       /* Glow effect */
+    --primary-hover: 217 91% 70%;
 
-    /* Secondary - Neutral Blue-Gray */
-    --secondary: 215 20% 95%;
-    --secondary-foreground: 215 25% 27%;
-    --secondary-hover: 215 20% 90%;
+    /* Secondary - Cyan Electric Blue */
+    --secondary: 190 85% 55%;
+    --secondary-foreground: 220 25% 5%;
+    --secondary-hover: 190 85% 60%;
 
-    /* Muted colors */
-    --muted: 215 20% 97%;
-    --muted-foreground: 215 13% 56%;
+    --muted: 220 20% 15%;
+    --muted-foreground: 210 20% 60%;
 
-    /* Accent - Vibrant Blue */
-    --accent: 212 100% 97%;
-    --accent-foreground: 217 91% 60%;
+    --accent: 190 85% 55%;
+    --accent-foreground: 220 25% 5%;
 
-    /* Status colors */
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-    --success: 142 71% 45%;
-    --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+    /* Status colors - Neon */
+    --destructive: 0 85% 55%;
+    --destructive-foreground: 210 40% 98%;
+    --success: 142 75% 50%;
+    --success-foreground: 220 25% 5%;
+    --warning: 38 95% 55%;
+    --warning-foreground: 220 25% 5%;
 
-    /* Borders and inputs */
-    --border: 215 14% 89%;
-    --input: 215 14% 89%;
-    --ring: 217 91% 60%;
+    --border: 220 20% 18%;
+    --input: 220 20% 18%;
+    --ring: 217 91% 65%;
 
     /* Timeline specific colors */
     --timeline-pending: 43 96% 56%;
@@ -56,19 +51,38 @@
     --timeline-completed: 142 71% 45%;
     --timeline-late: 0 84% 60%;
 
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%), hsl(220 100% 70%));
-    --gradient-secondary: linear-gradient(135deg, hsl(215 20% 95%), hsl(212 100% 97%));
-    --gradient-hero: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(220 100% 70%) 50%, hsl(212 100% 97%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(0 0% 100%) 0%, hsl(215 20% 98%) 100%);
+    /* Gradients - Neon Cyberpunk */
+    --gradient-primary: linear-gradient(135deg, 
+      hsl(217 91% 45%), 
+      hsl(190 85% 55%), 
+      hsl(217 91% 65%));
+    
+    --gradient-hero: linear-gradient(135deg, 
+      hsl(220 25% 8%) 0%, 
+      hsl(217 91% 25%) 50%, 
+      hsl(220 25% 8%) 100%);
+    
+    --gradient-card: linear-gradient(145deg, 
+      hsl(220 25% 10%) 0%, 
+      hsl(220 25% 12%) 100%);
 
-    /* Shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(215 25% 27% / 0.05);
-    --shadow-md: 0 4px 6px -1px hsl(215 25% 27% / 0.1), 0 2px 4px -1px hsl(215 25% 27% / 0.06);
-    --shadow-lg: 0 10px 15px -3px hsl(215 25% 27% / 0.1), 0 4px 6px -2px hsl(215 25% 27% / 0.05);
-    --shadow-xl: 0 20px 25px -5px hsl(215 25% 27% / 0.1), 0 10px 10px -5px hsl(215 25% 27% / 0.04);
-    --shadow-primary: 0 10px 30px -10px hsl(217 91% 60% / 0.3);
-    --shadow-glow: 0 0 40px hsl(220 100% 70% / 0.4);
+    --gradient-secondary: linear-gradient(135deg, 
+      hsl(220 20% 15%), 
+      hsl(220 20% 18%));
+
+    /* Shadows - Neon Glow */
+    --shadow-sm: 0 1px 2px 0 hsl(220 25% 5% / 0.3);
+    --shadow-md: 0 4px 6px -1px hsl(220 25% 5% / 0.4), 0 2px 4px -1px hsl(220 25% 5% / 0.3);
+    --shadow-lg: 0 10px 15px -3px hsl(220 25% 5% / 0.4), 0 4px 6px -2px hsl(220 25% 5% / 0.3);
+    --shadow-xl: 0 20px 25px -5px hsl(220 25% 5% / 0.5), 0 10px 10px -5px hsl(220 25% 5% / 0.3);
+    --shadow-primary: 0 0 30px hsl(217 91% 65% / 0.4), 
+                      0 0 60px hsl(217 91% 65% / 0.2);
+    
+    --shadow-glow: 0 0 20px hsl(220 100% 75% / 0.6),
+                   0 0 40px hsl(220 100% 75% / 0.4),
+                   0 0 60px hsl(220 100% 75% / 0.2);
+    
+    --shadow-card: 0 8px 32px hsl(220 25% 5% / 0.6);
 
     /* Animations */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -77,81 +91,92 @@
     --radius: 0.75rem;
 
     /* Sidebar colors */
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 215 25% 27%;
-    --sidebar-primary: 217 91% 60%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 215 20% 95%;
-    --sidebar-accent-foreground: 215 25% 27%;
-    --sidebar-border: 215 14% 89%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-background: 220 25% 9%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 217 91% 65%;
+    --sidebar-primary-foreground: 220 25% 5%;
+    --sidebar-accent: 220 20% 15%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 220 20% 18%;
+    --sidebar-ring: 217 91% 65%;
   }
+}
 
-  .dark {
-    /* Dark theme - Professional Blue */
-    --background: 215 28% 9%;
-    --foreground: 213 31% 91%;
-
-    --card: 215 28% 11%;
-    --card-foreground: 213 31% 91%;
-
-    --popover: 215 28% 11%;
-    --popover-foreground: 213 31% 91%;
-
-    --primary: 217 91% 60%;
-    --primary-foreground: 0 0% 100%;
-    --primary-glow: 220 100% 70%;
-    --primary-hover: 217 91% 65%;
-
-    --secondary: 215 28% 15%;
-    --secondary-foreground: 213 31% 91%;
-    --secondary-hover: 215 28% 18%;
-
-    --muted: 215 28% 15%;
-    --muted-foreground: 215 20% 65%;
-
-    --accent: 215 28% 15%;
-    --accent-foreground: 217 91% 60%;
-
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 213 31% 91%;
-    --success: 142 71% 45%;
-    --success-foreground: 213 31% 91%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 215 28% 9%;
-
-    --border: 215 28% 18%;
-    --input: 215 28% 18%;
-    --ring: 217 91% 60%;
-
-    --timeline-pending: 43 96% 56%;
-    --timeline-progress: 217 91% 60%;
-    --timeline-completed: 142 71% 45%;
-    --timeline-late: 0 84% 60%;
-
-    /* Dark gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%), hsl(220 100% 70%));
-    --gradient-secondary: linear-gradient(135deg, hsl(215 28% 15%), hsl(215 28% 18%));
-    --gradient-hero: linear-gradient(135deg, hsl(215 28% 9%) 0%, hsl(217 91% 60%) 50%, hsl(220 100% 70%) 100%);
-    --gradient-card: linear-gradient(145deg, hsl(215 28% 11%) 0%, hsl(215 28% 15%) 100%);
-
-    /* Dark shadows */
-    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.1);
-    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.2), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
-    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.2), 0 4px 6px -2px hsl(0 0% 0% / 0.1);
-    --shadow-xl: 0 20px 25px -5px hsl(0 0% 0% / 0.25), 0 10px 10px -5px hsl(0 0% 0% / 0.1);
-    --shadow-primary: 0 10px 30px -10px hsl(217 91% 60% / 0.4);
-    --shadow-glow: 0 0 40px hsl(220 100% 70% / 0.3);
-
-    --sidebar-background: 215 28% 9%;
-    --sidebar-foreground: 213 31% 91%;
-    --sidebar-primary: 217 91% 60%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 215 28% 15%;
-    --sidebar-accent-foreground: 213 31% 91%;
-    --sidebar-border: 215 28% 18%;
-    --sidebar-ring: 217 91% 60%;
+/* Background animations */
+@keyframes light-move {
+  0%, 100% {
+    background-position: 0% 50%;
   }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 20px hsl(217 91% 65% / 0.4);
+  }
+  50% {
+    box-shadow: 0 0 40px hsl(217 91% 65% / 0.8),
+                0 0 60px hsl(217 91% 65% / 0.4);
+  }
+}
+
+@keyframes fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-right {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes particle-float {
+  0%, 100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(10px, -10px);
+  }
+  50% {
+    transform: translate(-5px, 5px);
+  }
+  75% {
+    transform: translate(-10px, -5px);
+  }
+}
+
+/* Utility classes */
+.animate-light-move {
+  animation: light-move 8s ease infinite;
+  background-size: 200% 200%;
+}
+
+.glow-pulse {
+  animation: glow-pulse 2s ease-in-out infinite;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.5s ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}
+
+.animate-particle-float {
+  animation: particle-float 6s ease-in-out infinite;
 }
 
 @layer base {
@@ -160,6 +185,46 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    @apply bg-gradient-to-br from-background via-background to-primary/10;
+    background-size: 200% 200%;
+    animation: light-move 15s ease infinite;
+    position: relative;
+  }
+
+  /* Particle overlay effect */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+      radial-gradient(circle at 20% 50%, hsl(217 91% 45% / 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, hsl(190 85% 55% / 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 40% 20%, hsl(217 91% 65% / 0.05) 0%, transparent 40%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Moving light effect */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: 
+      radial-gradient(circle at center, hsl(217 91% 65% / 0.05) 0%, transparent 50%);
+    animation: particle-float 20s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Ensure content is above overlays */
+  #root {
+    position: relative;
+    z-index: 1;
   }
 }

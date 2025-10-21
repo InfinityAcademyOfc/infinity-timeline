@@ -97,6 +97,11 @@ const App = () => (
                   <ClientTimeline />
                 </ProtectedRoute>
               } />
+              <Route path="/cliente/indicacoes" element={
+                <ProtectedRoute>
+                  <ClientIndications />
+                </ProtectedRoute>
+              } />
               <Route path="/cliente/documentos" element={
                 <ProtectedRoute>
                   <ClientDocuments />
