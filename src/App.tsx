@@ -45,11 +45,8 @@ const App = () => (
               <Route path="/auth" element={<AuthPage />} />
               
               {/* Admin Routes */}
-              <Route path="/admin" element={
-                <ProtectedRoute requireAdmin>
-                  <Navigate to="/admin/dashboard" replace />
-                </ProtectedRoute>
-              } />
+              <Route path="/admin" element={<AuthPage adminMode />} />
+              <Route path="/admin/login" element={<AuthPage adminMode />} />
               <Route path="/admin/dashboard" element={
                 <ProtectedRoute requireAdmin>
                   <AdminDashboard />

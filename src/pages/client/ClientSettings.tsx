@@ -43,12 +43,17 @@ export default function ClientSettings() {
 
     const { data, error } = await supabase
       .from('profiles')
-      .select('full_name, company_name, responsible_name, cnpj, address, phone, responsible_phone, company_logo_url, notify_on_comment, notify_on_progress')
+      .select('full_name, email, company_name, responsible_name, cnpj, address, phone, responsible_phone, company_logo_url, notify_on_comment, notify_on_progress')
       .eq('id', user.id)
       .single();
 
     if (error) {
       console.error('Error loading profile:', error);
+      toast({
+        title: 'Erro ao carregar perfil',
+        description: 'Não foi possível carregar suas informações.',
+        variant: 'destructive'
+      });
       return;
     }
 
@@ -63,6 +68,18 @@ export default function ClientSettings() {
 
   const updateProfile = async () => {
     if (!user?.id) return;
+
+    // Validação de campos obrigatórios no primeiro acesso
+    if (isFirstAccess) {
+      if (!profile.company_name?.trim() || !profile.responsible_name?.trim()) {
+        toast({
+          title: 'Campos obrigatórios',
+          description: 'Por favor, preencha o nome da empresa e o nome do responsável.',
+          variant: 'destructive'
+        });
+        return;
+      }
+    }
 
     setLoading(true);
     try {
