@@ -107,11 +107,6 @@ const App = () => (
                   <ClientDocuments />
                 </ProtectedRoute>
               } />
-              <Route path="/cliente/indicacoes" element={
-                <ProtectedRoute>
-                  <ClientIndications />
-                </ProtectedRoute>
-              } />
               <Route path="/documents" element={
                 <ProtectedRoute>
                   <ClientDocuments />

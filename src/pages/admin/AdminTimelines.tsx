@@ -66,24 +66,33 @@ const AdminTimelines = () => {
       setSelectedFile(null);
     },
     onError: (error: any) => {
+      console.error('Import error:', error);
       toast({
         title: "Erro na importação",
-        description: error.message || "Não foi possível importar o cronograma.",
+        description: error.message || error.error || "Não foi possível importar o cronograma. Verifique o formato do arquivo.",
         variant: "destructive"
       });
     }
   });
 
   const parseTimelineFile = (content: string): ParsedTimeline => {
-    const lines = content.split('\n').map(line => line.trim()).filter(line => line.length > 0);
-    
-    let name = 'Cronograma Importado';
-    let duration = 12;
-    const items: ParsedTimeline['items'] = [];
-    let currentOrder = 1;
-    let currentPhase: string | undefined;
+    try {
+      const lines = content.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+      
+      if (lines.length === 0) {
+        throw new Error('Arquivo vazio ou sem conteúdo válido');
+      }
+      
+      let name = 'Cronograma Importado';
+      let duration = 12;
+      const items: ParsedTimeline['items'] = [];
+      let currentOrder = 1;
+      let currentPhase: string | undefined;
 
-    for (const line of lines) {
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      
+      if (!line || line.length === 0) continue; // Skip empty lines
       // Extrair nome do cronograma (primeira linha ou linha com "CRONOGRAMA:")
       if (line.toUpperCase().includes('CRONOGRAMA:') || items.length === 0) {
         const nameMatch = line.match(/(?:CRONOGRAMA:\s*)?(.+?)(?:\s*-?\s*\d+\s*meses?)?$/i);
@@ -160,7 +169,15 @@ const AdminTimelines = () => {
       }
     }
 
-    return { name, duration, items };
+      if (items.length === 0) {
+        throw new Error('Nenhum item válido encontrado no arquivo. Verifique o formato.');
+      }
+
+      return { name, duration, items };
+    } catch (error) {
+      console.error('Parse error:', error);
+      throw new Error(`Erro ao processar arquivo: ${error.message}`);
+    }
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {

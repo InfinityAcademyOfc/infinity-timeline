@@ -9,6 +9,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
 import { NotificationBell } from '@/components/NotificationBell';
+import { AppLayout } from '@/components/AppLayout';
 
 const ClientDashboard = () => {
   const { user } = useAuth();
@@ -64,14 +65,16 @@ const ClientDashboard = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
+      <AppLayout>
+        <div className="min-h-[calc(100vh-200px)] flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 p-6">
+    <AppLayout>
       <SEOHelmet 
         title="Dashboard Cliente" 
         description="Acompanhe o progresso dos seus projetos e cronogramas."
@@ -193,7 +196,7 @@ const ClientDashboard = () => {
           </Card>
         )}
       </div>
-    </div>
+    </AppLayout>
   );
 };
 

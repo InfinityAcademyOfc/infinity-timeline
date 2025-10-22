@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LogIn, UserPlus, Clock } from 'lucide-react';
 
 const AuthPage = () => {
-  const { user, signIn, signUp, loading } = useAuth();
+  const { user, signIn, signUp, loading, isAdmin } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -18,14 +18,16 @@ const AuthPage = () => {
 
   // Redirect if already authenticated
   if (user && !loading) {
-    return <Navigate to="/cliente/dashboard" replace />;
+    return <Navigate to={isAdmin ? "/admin/dashboard" : "/cliente/dashboard"} replace />;
   }
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    await signIn(email, password);
+    const { error } = await signIn(email, password);
     setIsLoading(false);
+    
+    // Redirect handled by Navigate above after auth state changes
   };
 
   const handleSignUp = async (e: React.FormEvent) => {

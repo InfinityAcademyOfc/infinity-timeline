@@ -46,14 +46,13 @@ serve(async (req) => {
       throw new Error('Invalid authentication');
     }
 
-    // Check if user is admin
-    const { data: profile, error: profileError } = await supabaseClient
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
+    // Check if user is admin using has_role function
+    const { data: isAdminData, error: roleError } = await supabaseClient.rpc('has_role', {
+      _user_id: user.id,
+      _role: 'ADMIN'
+    });
 
-    if (profileError || profile?.role !== 'ADMIN') {
+    if (roleError || !isAdminData) {
       throw new Error('Unauthorized - Admin access required');
     }
 

@@ -302,38 +302,56 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address: string | null
+          cnpj: string | null
           company_logo_url: string | null
+          company_name: string | null
           created_at: string
           email: string
           full_name: string | null
           id: string
           notify_on_comment: boolean | null
           notify_on_progress: boolean | null
+          phone: string | null
           points: number
+          responsible_name: string | null
+          responsible_phone: string | null
           role: Database["public"]["Enums"]["user_role"]
           updated_at: string
         }
         Insert: {
+          address?: string | null
+          cnpj?: string | null
           company_logo_url?: string | null
+          company_name?: string | null
           created_at?: string
           email: string
           full_name?: string | null
           id: string
           notify_on_comment?: boolean | null
           notify_on_progress?: boolean | null
+          phone?: string | null
           points?: number
+          responsible_name?: string | null
+          responsible_phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }
         Update: {
+          address?: string | null
+          cnpj?: string | null
           company_logo_url?: string | null
+          company_name?: string | null
           created_at?: string
           email?: string
           full_name?: string | null
           id?: string
           notify_on_comment?: boolean | null
           notify_on_progress?: boolean | null
+          phone?: string | null
           points?: number
+          responsible_name?: string | null
+          responsible_phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }

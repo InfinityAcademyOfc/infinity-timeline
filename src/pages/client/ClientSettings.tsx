@@ -17,10 +17,17 @@ export default function ClientSettings() {
   const [loading, setLoading] = useState(false);
   const [profile, setProfile] = useState({
     full_name: '',
+    company_name: '',
+    responsible_name: '',
+    cnpj: '',
+    address: '',
+    phone: '',
+    responsible_phone: '',
     company_logo_url: '',
     notify_on_comment: true,
     notify_on_progress: true
   });
+  const [isFirstAccess, setIsFirstAccess] = useState(false);
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -36,7 +43,7 @@ export default function ClientSettings() {
 
     const { data, error } = await supabase
       .from('profiles')
-      .select('full_name, company_logo_url, notify_on_comment, notify_on_progress')
+      .select('full_name, company_name, responsible_name, cnpj, address, phone, responsible_phone, company_logo_url, notify_on_comment, notify_on_progress')
       .eq('id', user.id)
       .single();
 
@@ -47,6 +54,10 @@ export default function ClientSettings() {
 
     if (data) {
       setProfile(data);
+      // Check if company profile is incomplete (first access)
+      if (!data.company_name || !data.responsible_name) {
+        setIsFirstAccess(true);
+      }
     }
   };
 
@@ -59,6 +70,12 @@ export default function ClientSettings() {
         .from('profiles')
         .update({
           full_name: profile.full_name,
+          company_name: profile.company_name,
+          responsible_name: profile.responsible_name,
+          cnpj: profile.cnpj,
+          address: profile.address,
+          phone: profile.phone,
+          responsible_phone: profile.responsible_phone,
           notify_on_comment: profile.notify_on_comment,
           notify_on_progress: profile.notify_on_progress
         })
@@ -66,6 +83,7 @@ export default function ClientSettings() {
 
       if (error) throw error;
 
+      setIsFirstAccess(false);
       toast({
         title: 'Perfil atualizado',
         description: 'Suas informações foram salvas com sucesso.'
@@ -194,6 +212,17 @@ export default function ClientSettings() {
         </p>
       </div>
 
+      {isFirstAccess && (
+        <Card className="border-primary bg-primary/5">
+          <CardHeader>
+            <CardTitle className="text-primary">Complete seu Perfil da Empresa</CardTitle>
+            <CardDescription>
+              Por favor, preencha as informações da sua empresa para continuar.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      )}
+
       <div className="grid gap-8">
         {/* Profile Settings */}
         <Card>
@@ -203,7 +232,7 @@ export default function ClientSettings() {
               Informações do Perfil
             </CardTitle>
             <CardDescription>
-              Atualize suas informações pessoais.
+              Atualize suas informações pessoais e da empresa.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -214,6 +243,68 @@ export default function ClientSettings() {
                 value={profile.full_name}
                 onChange={(e) => setProfile(prev => ({ ...prev, full_name: e.target.value }))}
                 placeholder="Seu nome completo"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="companyName">Nome da Empresa *</Label>
+              <Input
+                id="companyName"
+                value={profile.company_name}
+                onChange={(e) => setProfile(prev => ({ ...prev, company_name: e.target.value }))}
+                placeholder="Nome da sua empresa"
+                required={isFirstAccess}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="responsibleName">Nome do Responsável *</Label>
+              <Input
+                id="responsibleName"
+                value={profile.responsible_name}
+                onChange={(e) => setProfile(prev => ({ ...prev, responsible_name: e.target.value }))}
+                placeholder="Nome do responsável"
+                required={isFirstAccess}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="cnpj">CNPJ</Label>
+              <Input
+                id="cnpj"
+                value={profile.cnpj}
+                onChange={(e) => setProfile(prev => ({ ...prev, cnpj: e.target.value }))}
+                placeholder="00.000.000/0000-00"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="address">Endereço</Label>
+              <Input
+                id="address"
+                value={profile.address}
+                onChange={(e) => setProfile(prev => ({ ...prev, address: e.target.value }))}
+                placeholder="Endereço completo"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phone">Telefone da Empresa</Label>
+              <Input
+                id="phone"
+                value={profile.phone}
+                onChange={(e) => setProfile(prev => ({ ...prev, phone: e.target.value }))}
+                placeholder="(00) 0000-0000"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="responsiblePhone">Telefone do Responsável</Label>
+              <Input
+                id="responsiblePhone"
+                value={profile.responsible_phone}
+                onChange={(e) => setProfile(prev => ({ ...prev, responsible_phone: e.target.value }))}
+                placeholder="(00) 00000-0000"
               />
             </div>
 
