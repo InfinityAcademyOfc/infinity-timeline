@@ -1,18 +1,21 @@
+import { useState } from 'react';
 import { SEOHelmet } from '@/components/SEOHelmet';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { Trophy, Target, Gift, Clock, Calendar } from 'lucide-react';
+import { Trophy, Target, Gift, Clock, Calendar, Sparkles } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
 import { NotificationBell } from '@/components/NotificationBell';
 import { AppLayout } from '@/components/AppLayout';
+import { IndicationModal } from '@/components/client/IndicationModal';
 
 const ClientDashboard = () => {
   const { user } = useAuth();
+  const [indicationModalOpen, setIndicationModalOpen] = useState(false);
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ['profile', user?.id],
@@ -20,7 +23,7 @@ const ClientDashboard = () => {
       if (!user?.id) return null;
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select('full_name, points, monthly_fee')
         .eq('id', user.id)
         .single();
       
@@ -126,22 +129,25 @@ const ClientDashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Card de Bônus */}
-          <Card className="border-0 shadow-xl bg-gradient-to-br from-card to-card/80 backdrop-blur-sm">
+          {/* Card de Indicação */}
+          <Card className="hover-scale bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20 border-0 shadow-xl">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Bônus Disponível</CardTitle>
-              <Gift className="h-4 w-4 text-primary" />
+              <CardTitle className="text-sm font-medium">Indique e Ganhe</CardTitle>
+              <Sparkles className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold mb-2">
-                {Math.floor(points / 50)}
+              <div className="text-2xl font-bold text-primary mb-1">
+                {Math.floor((profile?.monthly_fee || 0) * 0.25)} pontos
               </div>
-              <Badge variant="outline" className="mb-2">
-                Recompensas Desbloqueadas
-              </Badge>
-              <p className="text-xs text-muted-foreground">
-                A cada 50 pontos você ganha uma recompensa
-              </p>
+              <p className="text-xs text-muted-foreground mb-3">Por cada indicação aprovada</p>
+              <Button 
+                onClick={() => setIndicationModalOpen(true)}
+                className="w-full bg-gradient-primary hover:opacity-90"
+                size="sm"
+              >
+                <Gift className="h-4 w-4 mr-2" />
+                Indicar Agora
+              </Button>
             </CardContent>
           </Card>
         </div>
@@ -196,6 +202,12 @@ const ClientDashboard = () => {
           </Card>
         )}
       </div>
+
+      <IndicationModal 
+        open={indicationModalOpen}
+        onOpenChange={setIndicationModalOpen}
+        monthlyFee={profile?.monthly_fee || 0}
+      />
     </AppLayout>
   );
 };

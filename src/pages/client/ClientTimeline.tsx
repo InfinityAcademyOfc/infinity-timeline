@@ -15,6 +15,10 @@ export interface TimelineItem {
   progress_status?: string;
   client_timeline_id: string;
   template_item_id?: string;
+  completion_percentage?: number;
+  estimated_hours?: number;
+  actual_hours?: number;
+  tags?: string[];
 }
 
 export interface ProcessedTimelineData {

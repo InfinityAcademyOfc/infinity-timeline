@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      client_bonuses: {
+        Row: {
+          awarded_by: string | null
+          client_id: string
+          created_at: string | null
+          id: string
+          points: number
+          reason: string
+        }
+        Insert: {
+          awarded_by?: string | null
+          client_id: string
+          created_at?: string | null
+          id?: string
+          points: number
+          reason: string
+        }
+        Update: {
+          awarded_by?: string | null
+          client_id?: string
+          created_at?: string | null
+          id?: string
+          points?: number
+          reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_bonuses_awarded_by_fkey"
+            columns: ["awarded_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_bonuses_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_kpis: {
         Row: {
           cac: number | null
@@ -310,6 +352,7 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          monthly_fee: number | null
           notify_on_comment: boolean | null
           notify_on_progress: boolean | null
           phone: string | null
@@ -328,6 +371,7 @@ export type Database = {
           email: string
           full_name?: string | null
           id: string
+          monthly_fee?: number | null
           notify_on_comment?: boolean | null
           notify_on_progress?: boolean | null
           phone?: string | null
@@ -346,6 +390,7 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          monthly_fee?: number | null
           notify_on_comment?: boolean | null
           notify_on_progress?: boolean | null
           phone?: string | null
@@ -354,6 +399,27 @@ export type Database = {
           responsible_phone?: string | null
           role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
+        }
+        Relationships: []
+      }
+      system_settings: {
+        Row: {
+          id: string
+          setting_key: string
+          setting_value: Json
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          setting_key: string
+          setting_value: Json
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          setting_key?: string
+          setting_value?: Json
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -384,45 +450,95 @@ export type Database = {
         }
         Relationships: []
       }
+      timeline_item_links: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          id: string
+          timeline_item_id: string
+          title: string
+          url: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          timeline_item_id: string
+          title: string
+          url: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          timeline_item_id?: string
+          title?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timeline_item_links_timeline_item_id_fkey"
+            columns: ["timeline_item_id"]
+            isOneToOne: false
+            referencedRelation: "timeline_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       timeline_items: {
         Row: {
+          actual_hours: number | null
           client_timeline_id: string
+          completion_percentage: number | null
           created_at: string
           description: string | null
           due_date: string
+          estimated_hours: number | null
           id: string
           progress_status:
             | Database["public"]["Enums"]["timeline_progress_status"]
             | null
           status: Database["public"]["Enums"]["timeline_item_status"]
+          tags: string[] | null
           template_item_id: string | null
           title: string
           updated_at: string
         }
         Insert: {
+          actual_hours?: number | null
           client_timeline_id: string
+          completion_percentage?: number | null
           created_at?: string
           description?: string | null
           due_date: string
+          estimated_hours?: number | null
           id?: string
           progress_status?:
             | Database["public"]["Enums"]["timeline_progress_status"]
             | null
           status?: Database["public"]["Enums"]["timeline_item_status"]
+          tags?: string[] | null
           template_item_id?: string | null
           title: string
           updated_at?: string
         }
         Update: {
+          actual_hours?: number | null
           client_timeline_id?: string
+          completion_percentage?: number | null
           created_at?: string
           description?: string | null
           due_date?: string
+          estimated_hours?: number | null
           id?: string
           progress_status?:
             | Database["public"]["Enums"]["timeline_progress_status"]
             | null
           status?: Database["public"]["Enums"]["timeline_item_status"]
+          tags?: string[] | null
           template_item_id?: string | null
           title?: string
           updated_at?: string
@@ -555,10 +671,7 @@ export type Database = {
         }
         Returns: boolean
       }
-      is_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      is_admin: { Args: never; Returns: boolean }
     }
     Enums: {
       app_role: "ADMIN" | "CLIENTE"

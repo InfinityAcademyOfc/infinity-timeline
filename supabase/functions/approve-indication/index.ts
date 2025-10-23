@@ -42,10 +42,10 @@ serve(async (req) => {
       throw new Error('Indication is not pending');
     }
 
-    // Get current client points
+    // Get client's current points and monthly fee
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('points')
+      .select('points, monthly_fee')
       .eq('id', indication.client_id)
       .single();
 
@@ -55,7 +55,12 @@ serve(async (req) => {
     }
 
     const currentPoints = profile?.points || 0;
-    const pointsToAdd = 200;
+    const monthlyFee = profile?.monthly_fee || 0;
+    
+    // Calculate 25% of the monthly fee as points
+    const pointsToAdd = Math.floor(monthlyFee * 0.25);
+    
+    console.log(`Awarding ${pointsToAdd} points (25% of monthly fee: ${monthlyFee})`);
 
     // Update indication status
     const { error: updateError } = await supabase
