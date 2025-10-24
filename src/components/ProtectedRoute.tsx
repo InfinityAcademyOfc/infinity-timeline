@@ -4,9 +4,10 @@ import { useAuth } from '@/contexts/AuthContext';
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAdmin?: boolean;
+  requireClient?: boolean;
 }
 
-export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps) => {
+export const ProtectedRoute = ({ children, requireAdmin = false, requireClient = false }: ProtectedRouteProps) => {
   const { user, loading, isAdmin } = useAuth();
   const location = useLocation();
 
@@ -22,8 +23,14 @@ export const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRout
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
+  // Admin trying to access client-only routes
+  if (requireClient && isAdmin) {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+
+  // Non-admin trying to access admin routes
   if (requireAdmin && !isAdmin) {
-    return <Navigate to="/cliente" replace />;
+    return <Navigate to="/cliente/dashboard" replace />;
   }
 
   return <>{children}</>;

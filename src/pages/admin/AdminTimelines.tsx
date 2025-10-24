@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Calendar, Upload, Plus, FileText } from 'lucide-react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { AppLayout } from '@/components/AppLayout';
 
 interface ParsedTimeline {
   name: string;
@@ -221,14 +222,16 @@ const AdminTimelines = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
+      <AppLayout showAdminNav>
+        <div className="min-h-[calc(100vh-200px)] flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 p-6">
+    <AppLayout showAdminNav>
       <SEOHelmet 
         title="Gerenciar Cronogramas" 
         description="Gerencie templates de cronograma e importe novos arquivos."
@@ -360,7 +363,7 @@ const AdminTimelines = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </AppLayout>
   );
 };
 

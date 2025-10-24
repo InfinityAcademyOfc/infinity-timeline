@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { SEOHelmet } from '@/components/SEOHelmet';
+import { AppLayout } from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -244,7 +245,7 @@ const AdminTemplates = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 p-6">
+    <AppLayout showAdminNav>
       <SEOHelmet 
         title="Editor de Templates" 
         description="Crie e gerencie templates de cronograma com editor visual drag-and-drop."
@@ -495,7 +496,7 @@ const AdminTemplates = () => {
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </AppLayout>
   );
 };
 

@@ -1,15 +1,17 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { LogOut, Bell } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { NotificationBell } from './NotificationBell';
+import { AdminNav } from './AdminNav';
 import { useNavigate } from 'react-router-dom';
 
 interface AppLayoutProps {
   children: React.ReactNode;
+  showAdminNav?: boolean;
 }
 
-export const AppLayout = ({ children }: AppLayoutProps) => {
-  const { signOut, user } = useAuth();
+export const AppLayout = ({ children, showAdminNav = false }: AppLayoutProps) => {
+  const { signOut, user, isAdmin } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -23,7 +25,7 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
         <div className="container flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-2">
             <h1 className="text-xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              Infinity Timeline
+              Infinity Timeline {isAdmin && <span className="text-sm">Admin</span>}
             </h1>
           </div>
           
@@ -43,6 +45,7 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
       </header>
       
       <main className="container mx-auto px-4 py-8">
+        {showAdminNav && <AdminNav />}
         {children}
       </main>
     </div>

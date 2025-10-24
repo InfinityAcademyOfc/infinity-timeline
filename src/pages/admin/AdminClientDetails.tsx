@@ -21,6 +21,7 @@ import { IndicationsTab } from '@/components/admin/IndicationsTab';
 import { DocumentsTab } from '@/components/admin/DocumentsTab';
 import { TimelineEditor } from '@/components/admin/TimelineEditor';
 import { BonusManager } from '@/components/admin/BonusManager';
+import { AppLayout } from '@/components/AppLayout';
 
 const AdminClientDetails = () => {
   const { clientId } = useParams<{ clientId: string }>();
@@ -181,28 +182,32 @@ const AdminClientDetails = () => {
 
   if (clientLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
+      <AppLayout showAdminNav>
+        <div className="min-h-[calc(100vh-200px)] flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        </div>
+      </AppLayout>
     );
   }
 
   if (!client) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardContent className="pt-6 text-center">
-            <AlertCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">Cliente não encontrado</h3>
-            <p className="text-muted-foreground">O cliente solicitado não foi encontrado ou não existe.</p>
-          </CardContent>
-        </Card>
-      </div>
+      <AppLayout showAdminNav>
+        <div className="min-h-[calc(100vh-200px)] flex items-center justify-center">
+          <Card className="max-w-md">
+            <CardContent className="pt-6 text-center">
+              <AlertCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-semibold mb-2">Cliente não encontrado</h3>
+              <p className="text-muted-foreground">O cliente solicitado não foi encontrado ou não existe.</p>
+            </CardContent>
+          </Card>
+        </div>
+      </AppLayout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 p-6">
+    <AppLayout showAdminNav>
       <SEOHelmet 
         title={`Cliente: ${client.full_name || client.email}`} 
         description="Detalhes do cliente e gerenciamento de cronogramas."
@@ -502,7 +507,7 @@ const AdminClientDetails = () => {
           </Tabs>
         )}
       </div>
-    </div>
+    </AppLayout>
   );
 };
 

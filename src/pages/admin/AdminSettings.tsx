@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Settings, Trophy, Palette, Bell, DollarSign } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AppLayout } from '@/components/AppLayout';
 
 const AdminSettings = () => {
   const { toast } = useToast();
@@ -72,7 +73,7 @@ const AdminSettings = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
+    <AppLayout showAdminNav>
       <SEOHelmet 
         title="Configurações - Admin" 
         description="Configure o sistema Infinity Timeline."
@@ -245,7 +246,7 @@ const AdminSettings = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </AppLayout>
   );
 };
 

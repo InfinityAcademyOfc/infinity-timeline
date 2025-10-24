@@ -75,53 +75,53 @@ const App = () => (
 
               {/* Client Routes */}
               <Route path="/cliente" element={
-                <ProtectedRoute>
+                <ProtectedRoute requireClient>
                   <Navigate to="/cliente/dashboard" replace />
                 </ProtectedRoute>
               } />
               <Route path="/cliente/dashboard" element={
-                <ProtectedRoute>
+                <ProtectedRoute requireClient>
                   <ClientDashboard />
                 </ProtectedRoute>
               } />
               <Route path="/cliente/cronograma" element={
-                <ProtectedRoute>
+                <ProtectedRoute requireClient>
                   <ClientTimeline />
                 </ProtectedRoute>
               } />
               <Route path="/timeline" element={
-                <ProtectedRoute>
+                <ProtectedRoute requireClient>
                   <ClientTimeline />
                 </ProtectedRoute>
               } />
               <Route path="/cliente/indicacoes" element={
-                <ProtectedRoute>
+                <ProtectedRoute requireClient>
                   <ClientIndications />
                 </ProtectedRoute>
               } />
               <Route path="/cliente/documentos" element={
-                <ProtectedRoute>
+                <ProtectedRoute requireClient>
                   <ClientDocuments />
                 </ProtectedRoute>
               } />
               <Route path="/documents" element={
-                <ProtectedRoute>
+                <ProtectedRoute requireClient>
                   <ClientDocuments />
                 </ProtectedRoute>
               } />
               <Route path="/progress" element={
-                <ProtectedRoute>
+                <ProtectedRoute requireClient>
                   <ClientProgress />
                 </ProtectedRoute>
               } />
               <Route path="/cliente/progresso" element={
-                <ProtectedRoute>
+                <ProtectedRoute requireClient>
                   <ClientProgress />
                 </ProtectedRoute>
               } />
 
               <Route path="/settings" element={
-                <ProtectedRoute>
+                <ProtectedRoute requireClient>
                   <ClientSettings />
                 </ProtectedRoute>
               } />
