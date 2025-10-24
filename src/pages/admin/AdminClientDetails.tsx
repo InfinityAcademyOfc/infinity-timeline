@@ -19,6 +19,8 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { IndicationsTab } from '@/components/admin/IndicationsTab';
 import { DocumentsTab } from '@/components/admin/DocumentsTab';
+import { TimelineEditor } from '@/components/admin/TimelineEditor';
+import { BonusManager } from '@/components/admin/BonusManager';
 
 const AdminClientDetails = () => {
   const { clientId } = useParams<{ clientId: string }>();
@@ -397,6 +399,8 @@ const AdminClientDetails = () => {
           <Tabs defaultValue="progress" className="space-y-6">
             <TabsList>
               <TabsTrigger value="progress">Progresso</TabsTrigger>
+              <TabsTrigger value="editor">Editor de Cronograma</TabsTrigger>
+              <TabsTrigger value="bonus">Bônus</TabsTrigger>
               <TabsTrigger value="indications">Indicações</TabsTrigger>
               <TabsTrigger value="documents">Documentos</TabsTrigger>
             </TabsList>
@@ -445,6 +449,49 @@ const AdminClientDetails = () => {
               </Card>
             </TabsContent>
 
+            <TabsContent value="editor">
+              <Card className="border-0 shadow-xl bg-gradient-card backdrop-blur-sm">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings className="h-5 w-5 text-primary" />
+                    Editor Visual de Cronograma
+                  </CardTitle>
+                  <CardDescription>
+                    Edite itens, adicione links e gerencie detalhes do cronograma
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {timelineItemsLoading ? (
+                    <div className="space-y-4">
+                      {[...Array(3)].map((_, i) => (
+                        <Card key={i} className="animate-pulse">
+                          <CardContent className="p-4">
+                            <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                            <div className="h-3 bg-muted rounded w-1/2"></div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : !timelineItems || timelineItems.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Clock className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                      <p className="text-muted-foreground">Nenhum item encontrado no cronograma.</p>
+                    </div>
+                  ) : (
+                    <TimelineEditor 
+                      clientTimelineId={activeTimeline?.id || ''} 
+                      items={timelineItems}
+                      onRefresh={() => queryClient.invalidateQueries({ queryKey: ['timeline-items', clientId] })}
+                    />
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="bonus">
+              <BonusManager clientId={clientId!} />
+            </TabsContent>
+
             <TabsContent value="indications">
               <IndicationsTab clientId={clientId!} />
             </TabsContent>
@@ -453,51 +500,6 @@ const AdminClientDetails = () => {
               <DocumentsTab clientId={clientId!} />
             </TabsContent>
           </Tabs>
-        )}
-
-        {/* Timeline Items Management - Only show if there's an active timeline */}
-        {hasActiveTimeline && (
-          <Card className="border-0 shadow-xl bg-gradient-to-br from-card to-card/80 backdrop-blur-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="h-5 w-5 text-primary" />
-                Gerenciamento de Progresso
-              </CardTitle>
-              <CardDescription>
-                Atualize o status dos itens do cronograma e gerencie a pontuação do cliente
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {timelineItemsLoading ? (
-                <div className="space-y-4">
-                  {[...Array(3)].map((_, i) => (
-                    <Card key={i} className="animate-pulse">
-                      <CardContent className="p-4">
-                        <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
-                        <div className="h-3 bg-muted rounded w-1/2"></div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              ) : !timelineItems || timelineItems.length === 0 ? (
-                <div className="text-center py-8">
-                  <Clock className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                  <p className="text-muted-foreground">Nenhum item encontrado no cronograma.</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {timelineItems.map((item) => (
-                    <TimelineItemCard 
-                      key={item.id} 
-                      item={item} 
-                      onUpdateProgress={updateProgressMutation.mutate}
-                      isUpdating={updateProgressMutation.isPending}
-                    />
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
         )}
       </div>
     </div>

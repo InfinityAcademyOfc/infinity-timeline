@@ -142,15 +142,25 @@ export default {
 					'50%': { transform: 'translate(-5px, 5px)' },
 					'75%': { transform: 'translate(-10px, -5px)' },
 				},
+				'pulse-glow': {
+					'0%, 100%': { boxShadow: '0 0 20px hsl(var(--primary) / 0.4)' },
+					'50%': { boxShadow: '0 0 40px hsl(var(--primary) / 0.8), 0 0 60px hsl(var(--primary) / 0.4)' },
+				},
+				'shimmer': {
+					'0%': { backgroundPosition: '-1000px 0' },
+					'100%': { backgroundPosition: '1000px 0' },
+				},
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'glow-pulse': 'glow-pulse 2s ease-in-out infinite',
+				'pulse-glow': 'pulse-glow 3s ease-in-out infinite',
 				'light-move': 'light-move 8s ease infinite',
 				'fade-in-up': 'fade-in-up 0.5s ease-out',
 				'slide-in-right': 'slide-in-right 0.3s ease-out',
 				'particle-float': 'particle-float 6s ease-in-out infinite',
+				'shimmer': 'shimmer 3s linear infinite',
 			}
 		}
 	},
