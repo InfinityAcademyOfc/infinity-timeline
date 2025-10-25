@@ -30,7 +30,7 @@ export const NotificationBell = () => {
     // Load initial notifications
     loadNotifications();
 
-    // Subscribe to real-time updates
+    // Subscribe to real-time updates com toast
     const channel = supabase
       .channel('notifications')
       .on(
@@ -41,7 +41,8 @@ export const NotificationBell = () => {
           table: 'notifications',
           filter: `user_id=eq.${user.id}`
         },
-        () => {
+        (payload) => {
+          console.log('Nova notificação recebida!', payload);
           loadNotifications();
         }
       )

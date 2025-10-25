@@ -8,9 +8,10 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   signUp: (email: string, password: string, fullName?: string) => Promise<{ error: Error | null }>;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: Error | null; roles: string[] }>;
   signOut: () => Promise<void>;
   isAdmin: boolean;
+  userProfile: any;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -127,7 +128,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data: signInData, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -138,15 +139,39 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           description: error.message,
           variant: "destructive",
         });
-        return { error };
+        return { error, roles: [] };
       }
 
-      toast({
-        title: "Login realizado!",
-        description: "Bem-vindo de volta!",
-      });
+      if (signInData.user) {
+        // Buscar perfil
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', signInData.user.id)
+          .single();
 
-      return { error: null };
+        if (profileError) {
+          console.error('Error fetching profile:', profileError);
+          return { error: profileError, roles: [] };
+        }
+
+        // Buscar roles separadamente
+        const { data: rolesData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', signInData.user.id);
+
+        const roles = rolesData?.map((r: any) => r.role) || [];
+        
+        toast({
+          title: "Login realizado!",
+          description: "Bem-vindo de volta!",
+        });
+
+        return { error: null, roles };
+      }
+
+      return { error: new Error('Usuário não encontrado após o login.'), roles: [] };
     } catch (error) {
       const err = error as Error;
       toast({
@@ -154,7 +179,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         description: err.message,
         variant: "destructive",
       });
-      return { error: err };
+      return { error: err, roles: [] };
     }
   };
 
@@ -181,6 +206,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     signIn,
     signOut,
     isAdmin,
+    userProfile,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

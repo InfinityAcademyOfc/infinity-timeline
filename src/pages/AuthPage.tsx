@@ -33,10 +33,11 @@ const AuthPage = ({ adminMode = false }: AuthPageProps) => {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    const { error } = await signIn(email, password);
+    const { error, roles } = await signIn(email, password);
     setIsLoading(false);
     
-    // Redirect handled by Navigate above after auth state changes
+    // Redirecionar não é necessário aqui - o Navigate acima cuida disso
+    // mas em caso de erro, o usuário permanece na página
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
