@@ -23,7 +23,7 @@ const ClientDashboard = () => {
       if (!user?.id) return null;
       const { data, error } = await supabase
         .from('profiles')
-        .select('full_name, points, monthly_fee')
+        .select('full_name, points, monthly_fee, responsible_name, company_name')
         .eq('id', user.id)
         .single();
       
@@ -87,7 +87,7 @@ const ClientDashboard = () => {
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-              Bem-vindo, {profile?.full_name || 'Cliente'}!
+              Bem-vindo, {profile?.responsible_name || profile?.company_name || 'Cliente'}!
             </h1>
             <p className="text-muted-foreground text-lg">
               Acompanhe seu progresso e conquistas

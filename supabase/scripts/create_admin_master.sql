@@ -10,7 +10,7 @@ Instruções:
 4. O Admin Master será criado com as credenciais abaixo
 
 Credenciais:
-Email: admin@infinitytimeline.com
+Email: infinitymkt00@gmail.com
 Senha: Doublem.2025$
 
 ⚠️ IMPORTANTE: Altere a senha após o primeiro login!
@@ -19,7 +19,7 @@ Senha: Doublem.2025$
 DO $$
 DECLARE
     admin_user_id UUID;
-    admin_email TEXT := 'admin@infinitytimeline.com';
+    admin_email TEXT := 'infinitymkt00@gmail.com';
     admin_pass TEXT := 'Doublem.2025$';
     existing_user_id UUID;
 BEGIN
