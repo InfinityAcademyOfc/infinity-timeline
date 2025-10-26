@@ -1,141 +1,148 @@
-// src/components/client/IndicationModal.tsx
 import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
-import { useToast } from '@/components/ui/use-toast'; // Import useToast
-import LoadingSpinner from '../LoadingSpinner';
-import { Database } from '@/integrations/supabase/types'; // Import Database types
-
-const indicationSchema = z.object({
-  indicated_name: z.string().min(2, { message: 'Nome é obrigatório.' }),
-  indicated_email: z.string().email({ message: 'Email inválido.' }).optional().or(z.literal('')),
-  indicated_phone: z.string().optional(),
-});
-
-type IndicationFormValues = z.infer<typeof indicationSchema>;
+import { Sparkles, Gift } from 'lucide-react';
 
 interface IndicationModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  monthlyFee: number;
 }
 
-const IndicationModal = ({ isOpen, onClose }: IndicationModalProps) => {
-  const { user } = useAuth();
-  const queryClient = useQueryClient();
-  const { toast } = useToast(); // Hook para toast
-  const [isLoading, setIsLoading] = useState(false);
-
-  const { register, handleSubmit, formState: { errors }, reset } = useForm<IndicationFormValues>({
-    resolver: zodResolver(indicationSchema),
+export const IndicationModal = ({ open, onOpenChange, monthlyFee }: IndicationModalProps) => {
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    indicated_name: '',
+    indicated_email: '',
+    indicated_phone: '',
   });
 
-  const mutation = useMutation({
-    mutationFn: async (newIndication: Omit<Database['public']['Tables']['indications']['Insert'], 'client_id' | 'status'>) => {
+  const pointsToEarn = Math.floor(monthlyFee * 0.25);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Usuário não autenticado');
-      setIsLoading(true); // Ativa loading no início da mutação
-      const { error } = await supabase.from('indications').insert({
-        ...newIndication,
-        client_id: user.id,
-        status: 'PENDENTE',
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      // ORDEM INVERTIDA: Invalida primeiro, depois mostra o toast
-      queryClient.invalidateQueries({ queryKey: ['indications', user?.id] });
-      toast({ title: 'Sucesso!', description: 'Sua indicação foi enviada.' });
-      reset(); // Limpa o formulário
-      onClose(); // Fecha o modal
-    },
-    onError: (error) => {
-      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
-    },
-    onSettled: () => {
-       setIsLoading(false); // Desativa loading ao finalizar (sucesso ou erro)
-    }
-  });
 
-  const onSubmit = (data: IndicationFormValues) => {
-    mutation.mutate(data);
+      const { error } = await supabase
+        .from('indications')
+        .insert({
+          client_id: user.id,
+          indicated_name: formData.indicated_name,
+          indicated_email: formData.indicated_email || null,
+          indicated_phone: formData.indicated_phone || null,
+          status: 'PENDENTE',
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Indicação enviada!',
+        description: `Você ganhará ${pointsToEarn} pontos quando a indicação for aprovada.`,
+      });
+
+      setFormData({ indicated_name: '', indicated_email: '', indicated_phone: '' });
+      onOpenChange(false);
+    } catch (error: any) {
+      toast({
+        title: 'Erro ao enviar indicação',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px] bg-gradient-to-br from-background via-background to-primary/5 border-primary/20">
         <DialogHeader>
-          <DialogTitle>Indicar um Amigo</DialogTitle>
-          <DialogDescription>
-            Preencha os dados abaixo para indicar alguém. Você ganhará pontos se a indicação for aprovada!
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 rounded-lg bg-gradient-primary/10 border border-primary/20">
+              <Gift className="h-6 w-6 text-primary" />
+            </div>
+            <DialogTitle className="text-2xl">Indique e Ganhe</DialogTitle>
+          </div>
+          <DialogDescription className="text-base">
+            Indique novos clientes e ganhe <span className="text-primary font-bold">{pointsToEarn} pontos</span> por cada indicação aprovada!
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="indicated_name" className="text-right">
-                Nome*
-              </Label>
-              <div className="col-span-3">
-                <Input
-                  id="indicated_name"
-                  {...register('indicated_name')}
-                  className={errors.indicated_name ? 'border-red-500' : ''}
-                  disabled={isLoading}
-                />
-                {errors.indicated_name && <p className="text-sm text-red-500 mt-1">{errors.indicated_name.message}</p>}
-              </div>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="indicated_email" className="text-right">
-                Email
-              </Label>
-               <div className="col-span-3">
-                <Input
-                  id="indicated_email"
-                  type="email"
-                  {...register('indicated_email')}
-                   className={errors.indicated_email ? 'border-red-500' : ''}
-                   disabled={isLoading}
-                />
-                 {errors.indicated_email && <p className="text-sm text-red-500 mt-1">{errors.indicated_email.message}</p>}
-               </div>
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="indicated_phone" className="text-right">
-                Telefone
-              </Label>
-              <Input
-                id="indicated_phone"
-                {...register('indicated_phone')}
-                className="col-span-3"
-                disabled={isLoading}
-              />
+
+        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+          <div className="space-y-2">
+            <Label htmlFor="indicated_name">Nome da Indicação *</Label>
+            <Input
+              id="indicated_name"
+              value={formData.indicated_name}
+              onChange={(e) => setFormData({ ...formData, indicated_name: e.target.value })}
+              placeholder="Nome completo"
+              required
+              className="border-primary/20 focus:border-primary"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="indicated_email">Email</Label>
+            <Input
+              id="indicated_email"
+              type="email"
+              value={formData.indicated_email}
+              onChange={(e) => setFormData({ ...formData, indicated_email: e.target.value })}
+              placeholder="email@exemplo.com"
+              className="border-primary/20 focus:border-primary"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="indicated_phone">Telefone</Label>
+            <Input
+              id="indicated_phone"
+              value={formData.indicated_phone}
+              onChange={(e) => setFormData({ ...formData, indicated_phone: e.target.value })}
+              placeholder="(00) 00000-0000"
+              className="border-primary/20 focus:border-primary"
+            />
+          </div>
+
+          <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 flex items-start gap-3">
+            <Sparkles className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+            <div className="text-sm">
+              <p className="font-semibold text-primary mb-1">Como funciona?</p>
+              <p className="text-muted-foreground">
+                Sua indicação será analisada pela nossa equipe. Após a aprovação e contratação, você receberá automaticamente os pontos na sua conta.
+              </p>
             </div>
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>Cancelar</Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? <LoadingSpinner /> : 'Enviar Indicação'}
+
+          <div className="flex gap-3 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="flex-1"
+              disabled={loading}
+            >
+              Cancelar
             </Button>
-          </DialogFooter>
+            <Button
+              type="submit"
+              className="flex-1 bg-gradient-primary hover:opacity-90"
+              disabled={loading}
+            >
+              {loading ? 'Enviando...' : 'Enviar Indicação'}
+            </Button>
+          </div>
         </form>
       </DialogContent>
     </Dialog>
   );
 };
-
-export default IndicationModal;
