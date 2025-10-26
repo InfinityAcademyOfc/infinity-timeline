@@ -1,4 +1,4 @@
-// src/pages/AuthPage.tsx
+// src/pages/AdminAuthPage.tsx
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
-const AuthPage = () => {
+const AdminAuthPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -17,31 +17,38 @@ const AuthPage = () => {
   const { toast } = useToast();
   const { signIn } = useAuth();
 
-  const handleSignIn = async (e: React.FormEvent) => {
+  const handleAdminSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     const { error, roles } = await signIn(email, password);
 
+    // Trata erro genérico de login primeiro (senha errada, usuário não existe)
     if (error) {
       toast({
         title: 'Erro no Login',
-        description: error.message,
+        // Mensagem genérica para não dar pistas se o usuário existe mas não é admin
+        description: 'Verifique suas credenciais.',
         variant: 'destructive',
       });
     } else {
-      if (!roles.includes('ADMIN')) {
-         toast({
-          title: 'Login bem-sucedido!',
-          description: 'Redirecionando para sua área...',
-        });
-        navigate('/cliente/dashboard'); // Redireciona Cliente
-      } else {
+      // Se o login foi SUCESSO, verifica se TEM o role ADMIN
+      if (roles.includes('ADMIN')) {
         toast({
-          title: 'Acesso Incorreto',
-          description: 'Administradores devem usar a página de login de admin.',
+          title: 'Login bem-sucedido!',
+          description: 'Redirecionando para o painel de controle...',
+        });
+        navigate('/admin/dashboard'); // ÚNICO redirecionamento possível
+      } else {
+        // Se logou com sucesso MAS NÃO É ADMIN
+        toast({
+          title: 'Acesso Não Autorizado',
+          description: 'Acesso apenas para administradores.', // Mensagem específica
           variant: 'destructive',
         });
+        // IMPORTANTE: Não faz logout aqui, apenas não redireciona.
+        // O usuário tecnicamente logou, mas não pode acessar nada.
+        // O ProtectedRoute vai barrá-lo se tentar navegar.
       }
     }
     setIsLoading(false);
@@ -49,21 +56,21 @@ const AuthPage = () => {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/40">
-      <Card className="mx-auto max-w-sm">
+      <Card className="mx-auto max-w-sm w-full"> {/* Adicionado w-full */}
         <CardHeader>
-          <CardTitle className="text-2xl">Login Cliente</CardTitle>
-          <CardDescription>
-            Entre com seu email e senha para acessar sua conta.
+          <CardTitle className="text-2xl text-center">Login Administrador</CardTitle> {/* Centralizado */}
+          <CardDescription className="text-center"> {/* Centralizado */}
+            Acesso restrito ao painel de controle.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSignIn} className="grid gap-4">
+          <form onSubmit={handleAdminSignIn} className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="cliente@exemplo.com"
+                placeholder="admin@infinitytimeline.com" // Exemplo mais claro
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -84,15 +91,14 @@ const AuthPage = () => {
               />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? <LoadingSpinner /> : 'Entrar'}
+              {isLoading ? <LoadingSpinner /> : 'Entrar'} {/* Texto simplificado */}
             </Button>
-            {/* Link Atualizado */}
-            <div className="mt-4 text-center text-sm">
-              É administrador?{' '}
-              <Link to="/admin/login" className="underline"> {/* <-- CORRIGIDO */}
-                Login de Admin
-              </Link>
-            </div>
+            {/* Link para login de cliente removido para isolamento total */}
+             <div className="mt-4 text-center text-sm">
+               <Link to="/" className="underline">
+                 Voltar para o Início
+               </Link>
+             </div>
           </form>
         </CardContent>
       </Card>
@@ -100,4 +106,4 @@ const AuthPage = () => {
   );
 };
 
-export default AuthPage;
+export default AdminAuthPage;
