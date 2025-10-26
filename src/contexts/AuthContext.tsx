@@ -1,213 +1,172 @@
+// src/contexts/AuthContext.tsx
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { supabase } from '../integrations/supabase/client';
+import { User } from '@supabase/supabase-js';
+import { Database } from '../integrations/supabase/types'; // Certifique-se que este tipo está atualizado!
+
+// Tipo UserProfile ajustado para garantir que 'roles' sempre exista (pode ser array vazio)
+type UserProfile = Database['public']['Tables']['profiles']['Row'] & {
+  roles: { role: Database['public']['Enums']['app_role'] }[]; // Usando o Enum do DB se disponível
+};
 
 interface AuthContextType {
   user: User | null;
-  session: Session | null;
-  loading: boolean;
-  signUp: (email: string, password: string, fullName?: string) => Promise<{ error: Error | null }>;
-  signIn: (email: string, password: string) => Promise<{ error: Error | null; roles: string[] }>;
-  signOut: () => Promise<void>;
+  userProfile: UserProfile | null;
   isAdmin: boolean;
-  userProfile: any;
+  isLoading: boolean;
+  // A função signIn agora retorna um objeto mais detalhado
+  signIn: (email: string, password: string) => Promise<{ success: boolean; error: Error | null; roles: string[] }>;
+  signOut: () => Promise<void>;
+  setUserProfile: (profile: UserProfile | null) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
-interface AuthProviderProps {
-  children: ReactNode;
-}
-
-export const AuthProvider = ({ children }: AuthProviderProps) => {
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [userProfile, setUserProfile] = useState<any>(null);
-  const { toast } = useToast();
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Começa como true
 
-  useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        // Fetch user profile and roles after auth state change
-        if (session?.user) {
-          setTimeout(async () => {
-            try {
-              // Fetch profile
-              const { data: profile } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', session.user.id)
-                .single();
-              
-              // Fetch user roles
-              const { data: roles } = await supabase
-                .from('user_roles')
-                .select('role')
-                .eq('user_id', session.user.id);
-              
-              setUserProfile({
-                ...profile,
-                roles: roles || []
-              });
-            } catch (error) {
-              console.error('Error fetching profile:', error);
-            }
-          }, 0);
-        } else {
-          setUserProfile(null);
+  // Função interna para buscar perfil E roles
+  const fetchUserProfileAndRoles = async (currentUser: User | null): Promise<UserProfile | null> => {
+    if (!currentUser) return null;
+    try {
+      // Busca perfil E faz join com user_roles para pegar os roles
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*, roles:user_roles!inner(role)') // Usa !inner para garantir que user_roles exista
+        .eq('id', currentUser.id)
+        .single(); // Espera um único resultado
+
+      if (error) {
+        // Se o erro for PGRST116, significa que o perfil existe mas não tem role (erro no trigger?)
+        if (error.code === 'PGRST116') {
+           console.error("Erro Crítico: Perfil encontrado, mas sem roles na tabela user_roles. Verifique o trigger 'handle_new_user'.", currentUser.id);
+           // Tenta buscar só o perfil como fallback, mas sem roles
+           const { data: basicProfile, error: basicError } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', currentUser.id)
+              .single();
+           if (basicError) throw basicError;
+           return { ...basicProfile, roles: [] } as UserProfile; // Retorna com roles vazios
         }
-        
-        setLoading(false);
+        throw error; // Relança outros erros
+      }
+      // Garante que roles seja sempre um array
+      return { ...profile, roles: profile.roles || [] } as UserProfile;
+    } catch (error) {
+      console.error('Error fetching user profile and roles:', error);
+      return null; // Retorna null se houver erro
+    }
+  };
+
+  // Efeito principal para gerenciar estado de autenticação
+  useEffect(() => {
+    let isMounted = true; // Flag para evitar updates após desmontar
+
+    const updateUserState = async (sessionUser: User | null) => {
+      setIsLoading(true);
+      const profile = await fetchUserProfileAndRoles(sessionUser);
+
+      if (isMounted) {
+        setUser(sessionUser);
+        setUserProfile(profile);
+        setIsAdmin(profile?.roles?.some(r => r.role === 'ADMIN') || false);
+        setIsLoading(false);
+      }
+    };
+
+    // Verifica sessão inicial
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      updateUserState(session?.user ?? null);
+    });
+
+    // Ouve mudanças (login, logout)
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        // Atualiza estado baseado na nova sessão
+        updateUserState(session?.user ?? null);
       }
     );
 
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    // Limpeza ao desmontar
+    return () => {
+      isMounted = false;
+      authListener?.subscription?.unsubscribe();
+    };
+  }, []); // Executa apenas uma vez na montagem
 
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const signUp = async (email: string, password: string, fullName?: string) => {
+  // Função signIn aprimorada
+  const signIn = async (email: string, password: string): Promise<{ success: boolean; error: Error | null; roles: string[] }> => {
+    setIsLoading(true); // Indica início do processo
     try {
-      const redirectUrl = `${window.location.origin}/`;
-      
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            full_name: fullName,
-          },
-        },
-      });
-
-      if (error) {
-        toast({
-          title: "Erro no cadastro",
-          description: error.message,
-          variant: "destructive",
-        });
-        return { error };
+      // 1. Tenta autenticar o usuário
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+      if (signInError) {
+        // Se houver erro na autenticação (email/senha errados), retorna falha
+        return { success: false, error: signInError, roles: [] };
       }
 
-      toast({
-        title: "Cadastro realizado!",
-        description: "Verifique seu email para confirmar a conta.",
-      });
+      // 2. Se autenticou, busca o perfil e roles imediatamente (onAuthStateChange pode demorar)
+      const profile = await fetchUserProfileAndRoles(signInData.user);
+      if (!profile) {
+         // Se não encontrou perfil/roles após login (problema grave!), desloga e retorna erro
+         await supabase.auth.signOut();
+         const profileError = new Error('Falha ao carregar dados do usuário após login.');
+         return { success: false, error: profileError, roles: [] };
+      }
 
-      return { error: null };
-    } catch (error) {
-      const err = error as Error;
-      toast({
-        title: "Erro no cadastro",
-        description: err.message,
-        variant: "destructive",
-      });
-      return { error: err };
+      // 3. Atualiza o estado local imediatamente (embora onAuthStateChange vá disparar também)
+      //    Isso garante que 'isAdmin' e 'userProfile' estejam corretos para o redirecionamento
+      const currentRoles = profile.roles.map(r => r.role);
+      setUser(signInData.user); // Atualiza user
+      setUserProfile(profile); // Atualiza profile
+      setIsAdmin(currentRoles.includes('ADMIN')); // Atualiza isAdmin
+
+      // 4. Retorna sucesso com os roles encontrados
+      return { success: true, error: null, roles: currentRoles };
+
+    } catch (e: any) {
+        // Captura qualquer outro erro inesperado
+        return { success: false, error: e, roles: [] };
+    } finally {
+        setIsLoading(false); // Garante que loading termine
     }
   };
 
-  const signIn = async (email: string, password: string) => {
-    try {
-      const { data: signInData, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error) {
-        toast({
-          title: "Erro no login",
-          description: error.message,
-          variant: "destructive",
-        });
-        return { error, roles: [] };
-      }
-
-      if (signInData.user) {
-        // Buscar perfil
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', signInData.user.id)
-          .single();
-
-        if (profileError) {
-          console.error('Error fetching profile:', profileError);
-          return { error: profileError, roles: [] };
-        }
-
-        // Buscar roles separadamente
-        const { data: rolesData } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', signInData.user.id);
-
-        const roles = rolesData?.map((r: any) => r.role) || [];
-        
-        toast({
-          title: "Login realizado!",
-          description: "Bem-vindo de volta!",
-        });
-
-        return { error: null, roles };
-      }
-
-      return { error: new Error('Usuário não encontrado após o login.'), roles: [] };
-    } catch (error) {
-      const err = error as Error;
-      toast({
-        title: "Erro no login",
-        description: err.message,
-        variant: "destructive",
-      });
-      return { error: err, roles: [] };
-    }
-  };
-
+  // Função signOut
   const signOut = async () => {
-    try {
-      await supabase.auth.signOut();
-      toast({
-        title: "Logout realizado",
-        description: "Até logo!",
-      });
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
+    setIsLoading(true); // Indica início
+    await supabase.auth.signOut();
+    // Limpa estado local (onAuthStateChange também fará isso, mas garantimos aqui)
+    setUser(null);
+    setUserProfile(null);
+    setIsAdmin(false);
+    setIsLoading(false); // Indica fim
   };
 
-  // Check if user has ADMIN role
-  const isAdmin = userProfile?.roles?.some((r: any) => r.role === 'ADMIN') || false;
-
+  // Valor fornecido pelo contexto
   const value = {
     user,
-    session,
-    loading,
-    signUp,
+    userProfile,
+    isAdmin,
+    isLoading,
     signIn,
     signOut,
-    isAdmin,
-    userProfile,
+    setUserProfile, // Necessário para o Onboarding
   };
 
+  // Renderiza children apenas se não estiver carregando (opcional, ProtectedRoute já faz isso)
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
+// Hook para usar o contexto
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };
