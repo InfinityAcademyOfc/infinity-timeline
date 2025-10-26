@@ -2,11 +2,10 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '../integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
-import { Database } from '../integrations/supabase/types'; // Certifique-se que este tipo está atualizado!
+import { Database } from '../integrations/supabase/types';
 
-// Tipo UserProfile ajustado para garantir que 'roles' sempre exista (pode ser array vazio)
 type UserProfile = Database['public']['Tables']['profiles']['Row'] & {
-  roles: { role: Database['public']['Enums']['app_role'] }[]; // Usando o Enum do DB se disponível
+  roles: { role: Database['public']['Enums']['app_role'] }[];
 };
 
 interface AuthContextType {
@@ -14,8 +13,8 @@ interface AuthContextType {
   userProfile: UserProfile | null;
   isAdmin: boolean;
   isLoading: boolean;
-  // A função signIn agora retorna um objeto mais detalhado
-  signIn: (email: string, password: string) => Promise<{ success: boolean; error: Error | null; roles: string[] }>;
+  // signIn agora retorna o caminho de redirecionamento
+  signIn: (email: string, password: string) => Promise<{ success: boolean; error: Error | null; redirectPath: string | null; isAdminLogin?: boolean }>; // Adicionado isAdminLogin para diferenciar
   signOut: () => Promise<void>;
   setUserProfile: (profile: UserProfile | null) => void;
 }
@@ -26,128 +25,120 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); // Começa como true
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Função interna para buscar perfil E roles
+  // Função interna para buscar perfil E roles (robusta)
   const fetchUserProfileAndRoles = async (currentUser: User | null): Promise<UserProfile | null> => {
     if (!currentUser) return null;
     try {
-      // Busca perfil E faz join com user_roles para pegar os roles
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('*, roles:user_roles!inner(role)') // Usa !inner para garantir que user_roles exista
+        .select('*, roles:user_roles!inner(role)') // Exige que roles existam
         .eq('id', currentUser.id)
-        .single(); // Espera um único resultado
-
+        .single();
       if (error) {
-        // Se o erro for PGRST116, significa que o perfil existe mas não tem role (erro no trigger?)
-        if (error.code === 'PGRST116') {
-           console.error("Erro Crítico: Perfil encontrado, mas sem roles na tabela user_roles. Verifique o trigger 'handle_new_user'.", currentUser.id);
-           // Tenta buscar só o perfil como fallback, mas sem roles
-           const { data: basicProfile, error: basicError } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', currentUser.id)
-              .single();
-           if (basicError) throw basicError;
-           return { ...basicProfile, roles: [] } as UserProfile; // Retorna com roles vazios
-        }
+         // Se PGRST116 (sem roles), loga erro crítico mas retorna perfil básico sem roles
+         if (error.code === 'PGRST116') {
+             console.error("AuthContext Erro Crítico: Perfil encontrado, mas sem roles na tabela user_roles. Verifique o trigger 'handle_new_user'. ID:", currentUser.id);
+             const { data: basicProfile, error: basicError } = await supabase
+                .from('profiles').select('*').eq('id', currentUser.id).single();
+             if (basicError) throw basicError;
+             // Retorna perfil básico com roles vazios - ProtectedRoute tratará isso como não-admin
+             return { ...basicProfile, roles: [] } as UserProfile;
+         }
         throw error; // Relança outros erros
       }
-      // Garante que roles seja sempre um array
       return { ...profile, roles: profile.roles || [] } as UserProfile;
     } catch (error) {
       console.error('Error fetching user profile and roles:', error);
-      return null; // Retorna null se houver erro
+      return null; // Falha na busca = null
     }
   };
 
-  // Efeito principal para gerenciar estado de autenticação
+  // Efeito principal para gerenciar estado de autenticação (robusto)
   useEffect(() => {
-    let isMounted = true; // Flag para evitar updates após desmontar
-
+    let isMounted = true;
     const updateUserState = async (sessionUser: User | null) => {
-      setIsLoading(true);
+      // Começa a carregar apenas se o estado do usuário realmente mudar
+      if (sessionUser?.id !== user?.id) {
+         setIsLoading(true);
+      }
       const profile = await fetchUserProfileAndRoles(sessionUser);
-
       if (isMounted) {
         setUser(sessionUser);
         setUserProfile(profile);
         setIsAdmin(profile?.roles?.some(r => r.role === 'ADMIN') || false);
+        // Só para de carregar DEPOIS de buscar o perfil
         setIsLoading(false);
       }
     };
-
-    // Verifica sessão inicial
     supabase.auth.getSession().then(({ data: { session } }) => {
       updateUserState(session?.user ?? null);
     });
-
-    // Ouve mudanças (login, logout)
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
-        // Atualiza estado baseado na nova sessão
         updateUserState(session?.user ?? null);
       }
     );
-
-    // Limpeza ao desmontar
     return () => {
       isMounted = false;
       authListener?.subscription?.unsubscribe();
     };
-  }, []); // Executa apenas uma vez na montagem
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Dependência vazia intencional para rodar só na montagem
 
-  // Função signIn aprimorada
-  const signIn = async (email: string, password: string): Promise<{ success: boolean; error: Error | null; roles: string[] }> => {
-    setIsLoading(true); // Indica início do processo
+  // signIn MODIFICADO para retornar redirectPath
+  const signIn = async (email: string, password: string): Promise<{ success: boolean; error: Error | null; redirectPath: string | null; isAdminLogin: boolean | null }> => {
+    setIsLoading(true);
+    let isAdminAttempt = false; // Flag para saber se veio do login admin
     try {
-      // 1. Tenta autenticar o usuário
+       // Identifica se a tentativa é da página admin (opcional, mas ajuda no debug)
+       isAdminAttempt = window.location.pathname.includes('/admin/login');
+
+      // 1. Autentica
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email, password });
       if (signInError) {
-        // Se houver erro na autenticação (email/senha errados), retorna falha
-        return { success: false, error: signInError, roles: [] };
+        return { success: false, error: signInError, redirectPath: null, isAdminLogin: isAdminAttempt };
       }
 
-      // 2. Se autenticou, busca o perfil e roles imediatamente (onAuthStateChange pode demorar)
+      // 2. Busca perfil/roles imediatamente
       const profile = await fetchUserProfileAndRoles(signInData.user);
       if (!profile) {
-         // Se não encontrou perfil/roles após login (problema grave!), desloga e retorna erro
-         await supabase.auth.signOut();
+         await supabase.auth.signOut(); // Desloga se perfil falhar
          const profileError = new Error('Falha ao carregar dados do usuário após login.');
-         return { success: false, error: profileError, roles: [] };
+         return { success: false, error: profileError, redirectPath: null, isAdminLogin: isAdminAttempt };
       }
 
-      // 3. Atualiza o estado local imediatamente (embora onAuthStateChange vá disparar também)
-      //    Isso garante que 'isAdmin' e 'userProfile' estejam corretos para o redirecionamento
+      // 3. Determina o role e o caminho de redirecionamento
       const currentRoles = profile.roles.map(r => r.role);
-      setUser(signInData.user); // Atualiza user
-      setUserProfile(profile); // Atualiza profile
-      setIsAdmin(currentRoles.includes('ADMIN')); // Atualiza isAdmin
+      const userIsAdmin = currentRoles.includes('ADMIN');
+      const redirectPath = userIsAdmin ? '/admin/dashboard' : '/cliente/dashboard';
 
-      // 4. Retorna sucesso com os roles encontrados
-      return { success: true, error: null, roles: currentRoles };
+      // 4. Atualiza estado local (importante fazer aqui também)
+      setUser(signInData.user);
+      setUserProfile(profile);
+      setIsAdmin(userIsAdmin);
+
+      // 5. Retorna sucesso, roles e o caminho correto
+      return { success: true, error: null, redirectPath: redirectPath, isAdminLogin: userIsAdmin }; // Retorna se o usuário É admin
 
     } catch (e: any) {
-        // Captura qualquer outro erro inesperado
-        return { success: false, error: e, roles: [] };
+        return { success: false, error: e, redirectPath: null, isAdminLogin: isAdminAttempt };
     } finally {
-        setIsLoading(false); // Garante que loading termine
+        setIsLoading(false);
     }
   };
 
-  // Função signOut
+  // signOut (sem alterações)
   const signOut = async () => {
-    setIsLoading(true); // Indica início
+    setIsLoading(true);
     await supabase.auth.signOut();
-    // Limpa estado local (onAuthStateChange também fará isso, mas garantimos aqui)
     setUser(null);
     setUserProfile(null);
     setIsAdmin(false);
-    setIsLoading(false); // Indica fim
+    setIsLoading(false);
   };
 
-  // Valor fornecido pelo contexto
   const value = {
     user,
     userProfile,
@@ -155,14 +146,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     isLoading,
     signIn,
     signOut,
-    setUserProfile, // Necessário para o Onboarding
+    setUserProfile,
   };
 
-  // Renderiza children apenas se não estiver carregando (opcional, ProtectedRoute já faz isso)
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-// Hook para usar o contexto
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
