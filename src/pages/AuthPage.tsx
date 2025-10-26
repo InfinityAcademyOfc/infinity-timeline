@@ -1,6 +1,6 @@
 // src/pages/AuthPage.tsx
-import { useState, useEffect } from 'react'; // Adicionado useEffect
-import { useNavigate, useLocation, Link } from 'react-router-dom'; // Adicionado useLocation
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,29 +12,33 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 const AuthPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoadingForm, setIsLoadingForm] = useState(false); // Renomeado
+  const [isLoadingForm, setIsLoadingForm] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation(); // Hook para obter a localização atual
+  const location = useLocation();
   const { toast } = useToast();
-  const { signIn, user, isLoading: isLoadingAuth, isAdmin } = useAuth(); // Pega user, isLoadingAuth, isAdmin
+  // Pega authStatus em vez de isLoadingAuth
+  const { signIn, user, authStatus, isAdmin } = useAuth();
 
-  // Efeito para redirecionar se já estiver logado como cliente
+  // Efeito para redirecionar se já estiver logado como cliente (usando authStatus)
   useEffect(() => {
-    // Se não estiver carregando a autenticação E o usuário existe E NÃO é admin
-    if (!isLoadingAuth && user && !isAdmin) {
-      navigate('/cliente/dashboard', { replace: true });
+    // Se autenticado E NÃO é admin
+    if (authStatus === 'authenticated' && !isAdmin) {
+      console.log("AuthPage: Já logado como cliente, redirecionando para dashboard."); // Log
+      // Tenta pegar rota original do state, senão vai para dashboard
+      const from = location.state?.from?.pathname || '/cliente/dashboard';
+      navigate(from, { replace: true });
     }
-  }, [user, isAdmin, isLoadingAuth, navigate]);
+  }, [authStatus, isAdmin, navigate, location.state]);
+
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoadingForm(true);
 
-    // Usa a nova função signIn que retorna { success, error, isAdminLogin }
-    const { success, error, isAdminLogin } = await signIn(email, password);
+    // Chama signIn que retorna { success, error, isActualAdmin }
+    const { success, error, isActualAdmin } = await signIn(email, password);
 
     if (!success || error) {
-      // Se signIn falhou (senha errada, usuário não existe, etc)
       toast({
         title: 'Erro no Login',
         description: 'Credencial Inválida.',
@@ -42,14 +46,12 @@ const AuthPage = () => {
       });
     } else {
       // Se signIn teve sucesso
-      if (!isAdminLogin) {
+      if (!isActualAdmin) {
          // Se o usuário logado NÃO É admin (é cliente)
         toast({
           title: 'Login bem-sucedido!',
-          description: 'Redirecionando...',
+          description: 'Redirecionando...', // O redirecionamento será pelo ProtectedRoute ou useEffect
         });
-        // A navegação será tratada pelo useEffect ou ProtectedRoute agora
-        // navigate('/cliente/dashboard'); // REMOVIDO DAQUI
       } else {
         // Se o usuário logado É ADMIN (tentando logar aqui)
         toast({
@@ -57,22 +59,25 @@ const AuthPage = () => {
           description: 'Credencial Inválida.',
           variant: 'destructive',
         });
-        // IMPORTANTE: O admin logou com sucesso, mas não deveria.
-        // O ProtectedRoute o impedirá de acessar /cliente,
-        // mas ele ficaria preso aqui. Idealmente, deslogar.
       }
     }
     setIsLoadingForm(false);
   };
 
-   // Não renderiza o formulário se já estiver logado como cliente (redirecionamento pelo useEffect)
-   if (isLoadingAuth || (user && !isAdmin)) {
-      return (
-        <div className="flex h-screen w-full items-center justify-center">
-          <LoadingSpinner />
-        </div>
-      );
-   }
+  // Mostra loading global se o AuthContext ainda está carregando
+  if (authStatus === 'loading') {
+     return (
+       <div className="flex h-screen w-full items-center justify-center">
+         <LoadingSpinner />
+       </div>
+     );
+  }
+
+  // Se já estiver logado como cliente, não renderiza o form (será redirecionado)
+  if (user && !isAdmin) {
+     console.log("AuthPage: Renderizando null pois já está logado como cliente."); // Log
+     return null; // ou um spinner rápido
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
@@ -85,42 +90,24 @@ const AuthPage = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignIn} className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="seuemail@exemplo.com"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoadingForm}
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoadingForm}
-              />
-            </div>
+             {/* Campos Email e Senha */}
+             <div className="grid gap-2">
+               <Label htmlFor="email">Email</Label>
+               <Input id="email" type="email" placeholder="seuemail@exemplo.com" required value={email} onChange={(e) => setEmail(e.target.value)} disabled={isLoadingForm}/>
+             </div>
+             <div className="grid gap-2">
+               <Label htmlFor="password">Senha</Label>
+               <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} disabled={isLoadingForm}/>
+             </div>
             <Button type="submit" className="w-full" disabled={isLoadingForm}>
               {isLoadingForm ? <LoadingSpinner /> : 'Entrar'}
             </Button>
             <div className="mt-4 text-center text-sm">
               É administrador?{' '}
-              <Link to="/admin/login" className="underline">
-                Acesse aqui
-              </Link>
+              <Link to="/admin/login" className="underline"> Acesse aqui </Link>
             </div>
             <div className="mt-1 text-center text-sm">
-               <Link to="/" className="underline">
-                 Voltar para o Início
-               </Link>
+               <Link to="/" className="underline"> Voltar para o Início </Link>
              </div>
           </form>
         </CardContent>
