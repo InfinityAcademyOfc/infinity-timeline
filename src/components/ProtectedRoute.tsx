@@ -1,37 +1,44 @@
-import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+// src/components/ProtectedRoute.tsx
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import LoadingSpinner from './LoadingSpinner';
 
-interface ProtectedRouteProps {
+type ProtectedRouteProps = {
   children: React.ReactNode;
   requireAdmin?: boolean;
   requireClient?: boolean;
-}
+};
 
-export const ProtectedRoute = ({ children, requireAdmin = false, requireClient = false }: ProtectedRouteProps) => {
-  const { user, loading, isAdmin } = useAuth();
-  const location = useLocation();
+const ProtectedRoute = ({ children, requireAdmin, requireClient }: ProtectedRouteProps) => {
+  const { user, isAdmin, isLoading, userProfile } = useAuth();
 
-  if (loading) {
+  if (isLoading || (user && !userProfile)) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div className="flex h-screen w-full items-center justify-center">
+        <LoadingSpinner />
       </div>
     );
   }
 
+  // Se não estiver logado...
   if (!user) {
-    return <Navigate to="/auth" state={{ from: location }} replace />;
+     // Se tentar acessar admin sem logar, vai para /admin/login (a rota correta)
+     if (requireAdmin) return <Navigate to="/admin/login" replace />; // <-- CORRIGIDO AQUI
+     // Senão (tentar acessar cliente), vai para /auth (login cliente)
+     return <Navigate to="/auth" replace />;
   }
 
-  // Admin trying to access client-only routes
-  if (requireClient && isAdmin) {
-    return <Navigate to="/admin/dashboard" replace />;
-  }
-
-  // Non-admin trying to access admin routes
+  // Se a rota exige Admin, mas o usuário NÃO é admin
   if (requireAdmin && !isAdmin) {
     return <Navigate to="/cliente/dashboard" replace />;
   }
 
-  return <>{children}</>;
+  // Se a rota exige Cliente, mas o usuário É admin
+  if (requireClient && isAdmin) {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+
+  return children;
 };
+
+export default ProtectedRoute;
