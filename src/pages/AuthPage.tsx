@@ -21,42 +21,44 @@ const AuthPage = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    const { error, roles } = await signIn(email, password);
+    // Usa a nova função signIn que retorna { success, error, roles }
+    const { success, error, roles } = await signIn(email, password);
 
-    // Trata erro genérico de login (senha errada, usuário não existe)
-    if (error) {
+    if (!success || error) {
+      // Se signIn falhou (senha errada, usuário não existe, erro ao buscar perfil)
       toast({
         title: 'Erro no Login',
-        description: 'Credencial Inválida.', // Mensagem genérica
+        description: 'Credencial Inválida.', // Mensagem solicitada
         variant: 'destructive',
       });
     } else {
-      // Se o login foi SUCESSO, verifica se NÃO É ADMIN
+      // Se signIn teve sucesso E o usuário NÃO TEM o role ADMIN (é cliente)
       if (!roles.includes('ADMIN')) {
          toast({
           title: 'Login bem-sucedido!',
-          description: 'Redirecionando para sua área...',
+          description: 'Redirecionando...',
         });
-        navigate('/cliente/dashboard'); // ÚNICO redirecionamento possível
+        navigate('/cliente/dashboard'); // Único redirecionamento
       } else {
-        // Se logou com sucesso MAS É ADMIN (tentando logar aqui)
+        // Se signIn teve sucesso MAS É ADMIN (tentando logar aqui)
         toast({
           title: 'Erro no Login',
-          description: 'Credencial Inválida.', // Mesma mensagem genérica
+          description: 'Credencial Inválida.', // Mensagem solicitada
           variant: 'destructive',
         });
-         // IMPORTANTE: Não faz logout, apenas não redireciona.
+         // IMPORTANTE: O admin logou com sucesso, mas não deveria estar aqui.
+         // O ideal seria deslogá-lo. Manter simples por ora.
       }
     }
     setIsLoading(false);
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40">
-      <Card className="mx-auto max-w-sm w-full"> {/* Adicionado w-full */}
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4"> {/* Adicionado padding */}
+      <Card className="mx-auto max-w-sm w-full">
         <CardHeader>
-          <CardTitle className="text-2xl text-center">Login Cliente</CardTitle> {/* Centralizado */}
-          <CardDescription className="text-center"> {/* Centralizado */}
+          <CardTitle className="text-2xl text-center">Login Cliente</CardTitle>
+          <CardDescription className="text-center">
             Acesse sua conta para visualizar o cronograma.
           </CardDescription>
         </CardHeader>
@@ -67,7 +69,7 @@ const AuthPage = () => {
               <Input
                 id="email"
                 type="email"
-                placeholder="seuemail@exemplo.com" // Exemplo mais claro
+                placeholder="seuemail@exemplo.com"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -75,12 +77,7 @@ const AuthPage = () => {
               />
             </div>
             <div className="grid gap-2">
-              <div className="flex items-center">
-                <Label htmlFor="password">Senha</Label>
-                 {/* <Link to="#" className="ml-auto inline-block text-sm underline">
-                  Esqueceu sua senha?
-                 </Link> */}
-              </div>
+              <Label htmlFor="password">Senha</Label>
               <Input
                 id="password"
                 type="password"
@@ -91,10 +88,16 @@ const AuthPage = () => {
               />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? <LoadingSpinner /> : 'Entrar'} {/* Texto simplificado */}
+              {isLoading ? <LoadingSpinner /> : 'Entrar'}
             </Button>
-            {/* Link para login de admin removido para isolamento total */}
-             <div className="mt-4 text-center text-sm">
+            {/* Link para login de admin - mantido para conveniência, pode remover se preferir isolamento total */}
+            <div className="mt-4 text-center text-sm">
+              É administrador?{' '}
+              <Link to="/admin/login" className="underline">
+                Acesse aqui
+              </Link>
+            </div>
+             <div className="mt-1 text-center text-sm"> {/* Ajustado espaçamento */}
                <Link to="/" className="underline">
                  Voltar para o Início
                </Link>
