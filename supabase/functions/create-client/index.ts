@@ -104,6 +104,26 @@ serve(async (req) => {
 
     console.log(`Successfully created client profile for: ${email}`);
 
+    // Insert CLIENTE role in user_roles table
+    const { error: roleInsertError } = await supabaseClient
+      .from('user_roles')
+      .insert({
+        user_id: newUser.user.id,
+        role: 'CLIENTE'
+      });
+
+    if (roleInsertError) {
+      console.error('Error creating user role:', roleInsertError);
+      
+      // Rollback: delete profile and auth user if role creation failed
+      await supabaseClient.from('profiles').delete().eq('id', newUser.user.id);
+      await supabaseClient.auth.admin.deleteUser(newUser.user.id);
+      
+      throw new Error(`Failed to create user role: ${roleInsertError.message}`);
+    }
+
+    console.log(`Successfully created CLIENTE role for: ${email}`);
+
     return new Response(
       JSON.stringify({ 
         success: true, 
