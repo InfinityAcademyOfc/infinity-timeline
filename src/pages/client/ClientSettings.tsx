@@ -1,466 +1,361 @@
-import { useState, useEffect } from 'react';
-import { SEOHelmet } from '@/components/SEOHelmet';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+// src/pages/client/ClientSettings.tsx
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 import { Button } from '@/components/ui/button';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
-import { Upload, User, Lock, Bell } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useEffect, useState } from 'react';
+import LoadingSpinner from '@/components/LoadingSpinner';
+import { useToast } from '@/components/ui/use-toast'; // Importar useToast
 
-export default function ClientSettings() {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
-  const [profile, setProfile] = useState({
-    full_name: '',
-    company_name: '',
-    responsible_name: '',
-    cnpj: '',
-    address: '',
-    phone: '',
-    responsible_phone: '',
-    company_logo_url: '',
-    notify_on_comment: true,
-    notify_on_progress: true
-  });
-  const [isFirstAccess, setIsFirstAccess] = useState(false);
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
+// Schema Zod atualizado com campos da empresa (opcionais)
+const formSchema = z.object({
+  full_name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
+  email: z.string().email('Email inválido'),
+  company_logo_url: z.string().url('URL inválida').nullable(),
+  notify_on_comment: z.boolean(),
+  notify_on_progress: z.boolean(),
+  company_name: z.string().nullable().optional(),
+  responsible_name: z.string().nullable().optional(),
+  cnpj: z.string().nullable().optional(),
+  address: z.string().nullable().optional(),
+  phone: z.string().nullable().optional(),
+  responsible_phone: z.string().nullable().optional(),
+});
+
+type ProfileFormValues = z.infer<typeof formSchema>;
+
+const ClientSettings = () => {
+  const { user, userProfile, setUserProfile } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const { toast } = useToast(); // Hook para toasts
+
+  const form = useForm<ProfileFormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      full_name: '',
+      email: '',
+      company_logo_url: null,
+      notify_on_comment: true,
+      notify_on_progress: true,
+      company_name: '',
+      responsible_name: '',
+      cnpj: '',
+      address: '',
+      phone: '',
+      responsible_phone: '',
+    },
   });
 
   useEffect(() => {
-    loadProfile();
-  }, [user]);
-
-  const loadProfile = async () => {
-    if (!user?.id) return;
-
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('full_name, email, company_name, responsible_name, cnpj, address, phone, responsible_phone, company_logo_url, notify_on_comment, notify_on_progress')
-      .eq('id', user.id)
-      .single();
-
-    if (error) {
-      console.error('Error loading profile:', error);
-      toast({
-        title: 'Erro ao carregar perfil',
-        description: 'Não foi possível carregar suas informações.',
-        variant: 'destructive'
+    if (userProfile) {
+      form.reset({
+        full_name: userProfile.full_name || '',
+        email: userProfile.email || '',
+        company_logo_url: userProfile.company_logo_url || null,
+        notify_on_comment: userProfile.notify_on_comment ?? true,
+        notify_on_progress: userProfile.notify_on_progress ?? true,
+        company_name: userProfile.company_name || '',
+        responsible_name: userProfile.responsible_name || '',
+        cnpj: userProfile.cnpj || '',
+        address: userProfile.address || '',
+        phone: userProfile.phone || '',
+        responsible_phone: userProfile.responsible_phone || '',
       });
-      return;
     }
+  }, [userProfile, form]);
 
-    if (data) {
-      setProfile(data);
-      // Check if company profile is incomplete (first access)
-      if (!data.company_name || !data.responsible_name) {
-        setIsFirstAccess(true);
-      }
-    }
-  };
-
-  const updateProfile = async () => {
-    if (!user?.id) return;
-
-    // Validação de campos obrigatórios no primeiro acesso
-    if (isFirstAccess) {
-      if (!profile.company_name?.trim() || !profile.responsible_name?.trim()) {
-        toast({
-          title: 'Campos obrigatórios',
-          description: 'Por favor, preencha o nome da empresa e o nome do responsável.',
-          variant: 'destructive'
-        });
-        return;
-      }
-    }
-
-    setLoading(true);
+  const onSubmit = async (values: ProfileFormValues) => {
+    if (!user) return;
+    setIsLoading(true);
     try {
-      const { error } = await supabase
+      // Remover email do objeto de atualização, pois não deve ser alterado aqui
+      const { email, ...updateData } = values;
+
+      const { data, error } = await supabase
         .from('profiles')
-        .update({
-          full_name: profile.full_name,
-          company_name: profile.company_name,
-          responsible_name: profile.responsible_name,
-          cnpj: profile.cnpj,
-          address: profile.address,
-          phone: profile.phone,
-          responsible_phone: profile.responsible_phone,
-          notify_on_comment: profile.notify_on_comment,
-          notify_on_progress: profile.notify_on_progress
-        })
-        .eq('id', user.id);
+        .update(updateData)
+        .eq('id', user.id)
+        .select('*, roles:user_roles(role)') // Buscar perfil atualizado com roles
+        .single();
 
       if (error) throw error;
 
-      setIsFirstAccess(false);
-      toast({
-        title: 'Perfil atualizado',
-        description: 'Suas informações foram salvas com sucesso.'
-      });
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível atualizar o perfil.',
-        variant: 'destructive'
-      });
+      setUserProfile(data as any); // Atualiza o perfil no contexto
+      toast({ title: 'Sucesso!', description: 'Seu perfil foi atualizado.' });
+    } catch (error: any) {
+      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+    } finally {
+      setIsLoading(false);
     }
-    setLoading(false);
-  };
-
-  const updateEmail = async () => {
-    // This would use supabase.auth.updateUser()
-    toast({
-      title: 'Funcionalidade em desenvolvimento',
-      description: 'A alteração de email estará disponível em breve.'
-    });
-  };
-
-  const updatePassword = async () => {
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      toast({
-        title: 'Erro',
-        description: 'As senhas não coincidem.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    if (passwordData.newPassword.length < 6) {
-      toast({
-        title: 'Erro',
-        description: 'A senha deve ter pelo menos 6 caracteres.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.updateUser({
-        password: passwordData.newPassword
-      });
-
-      if (error) throw error;
-
-      setPasswordData({
-        currentPassword: '',
-        newPassword: '',
-        confirmPassword: ''
-      });
-
-      toast({
-        title: 'Senha atualizada',
-        description: 'Sua senha foi alterada com sucesso.'
-      });
-    } catch (error) {
-      console.error('Error updating password:', error);
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível alterar a senha.',
-        variant: 'destructive'
-      });
-    }
-    setLoading(false);
   };
 
   const handleLogoUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file || !user?.id) return;
+    if (!user || !event.target.files || event.target.files.length === 0) {
+      return;
+    }
 
-    setLoading(true);
+    const file = event.target.files[0];
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user.id}-logo.${fileExt}`;
+    const filePath = `logos/${fileName}`;
+
+    setIsUploading(true);
     try {
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}-logo.${fileExt}`;
+      // Excluir logo antigo (se existir) - opcional, mas boa prática
+      // await supabase.storage.from('documents').remove([`logos/${user.id}-logo.*`]); // Isso requereria listar antes
 
       const { error: uploadError } = await supabase.storage
         .from('documents')
-        .upload(`logos/${fileName}`, file, { upsert: true });
+        .upload(filePath, file, { upsert: true }); // Usar upsert para sobrescrever
 
-      if (uploadError) throw uploadError;
+      if (uploadError) {
+        throw uploadError;
+      }
 
-      const { data: { publicUrl } } = supabase.storage
+      // Obter a URL pública do arquivo recém-carregado
+      const { data: urlData } = supabase.storage
         .from('documents')
-        .getPublicUrl(`logos/${fileName}`);
+        .getPublicUrl(filePath);
 
-      const { error: updateError } = await supabase
+      const publicUrl = urlData?.publicUrl;
+
+      // Atualizar a URL no perfil do usuário
+      const { data, error: updateError } = await supabase
         .from('profiles')
         .update({ company_logo_url: publicUrl })
-        .eq('id', user.id);
+        .eq('id', user.id)
+        .select('*, roles:user_roles(role)')
+        .single();
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        throw updateError;
+      }
 
-      setProfile(prev => ({ ...prev, company_logo_url: publicUrl }));
+      setUserProfile(data as any); // Atualiza o perfil no contexto com a nova URL
+      form.setValue('company_logo_url', publicUrl); // Atualiza o valor no formulário
+      toast({ title: 'Sucesso!', description: 'Logo atualizado.' });
 
-      toast({
-        title: 'Logo atualizada',
-        description: 'A logo da empresa foi salva com sucesso.'
-      });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error uploading logo:', error);
-      toast({
-        title: 'Erro',
-        description: 'Não foi possível fazer upload da logo.',
-        variant: 'destructive'
-      });
+      // ADICIONADO TOAST DE ERRO
+      toast({ title: 'Erro no Upload', description: error.message || 'Falha ao enviar o logo.', variant: 'destructive' });
+    } finally {
+      setIsUploading(false);
     }
-    setLoading(false);
   };
 
+
   return (
-    <div className="container mx-auto py-8 space-y-8">
-      <SEOHelmet 
-        title="Configurações" 
-        description="Gerencie suas configurações de perfil e preferências."
-      />
-      
-      <div className="space-y-2">
-        <h1 className="text-3xl font-bold">Configurações</h1>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold tracking-tight">Configurações da Conta</h2>
         <p className="text-muted-foreground">
-          Gerencie suas informações pessoais e preferências de conta.
+          Gerencie suas informações pessoais, dados da empresa e preferências.
         </p>
       </div>
+      <Separator />
 
-      {isFirstAccess && (
-        <Card className="border-primary bg-primary/5">
-          <CardHeader>
-            <CardTitle className="text-primary">Complete seu Perfil da Empresa</CardTitle>
-            <CardDescription>
-              Por favor, preencha as informações da sua empresa para continuar.
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      )}
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          {/* Seção de Perfil Pessoal */}
+          <div className="flex items-center gap-4">
+             <Avatar className="h-16 w-16">
+               <AvatarImage src={form.watch('company_logo_url') || undefined} alt="Logo da Empresa" />
+               <AvatarFallback>{userProfile?.full_name?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+             </Avatar>
+             <div className="grid gap-1">
+               <Label htmlFor="logo-upload" className="cursor-pointer text-sm font-medium text-primary underline-offset-4 hover:underline">
+                 {isUploading ? 'Enviando...' : 'Alterar Logo'}
+               </Label>
+               <Input id="logo-upload" type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} disabled={isUploading} />
+               <p className="text-xs text-muted-foreground">PNG, JPG, GIF até 1MB</p>
+             </div>
+          </div>
 
-      <div className="grid gap-8">
-        {/* Profile Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="w-5 h-5" />
-              Informações do Perfil
-            </CardTitle>
-            <CardDescription>
-              Atualize suas informações pessoais e da empresa.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="fullName">Nome Completo</Label>
-              <Input
-                id="fullName"
-                value={profile.full_name}
-                onChange={(e) => setProfile(prev => ({ ...prev, full_name: e.target.value }))}
-                placeholder="Seu nome completo"
-              />
-            </div>
+          <FormField
+            control={form.control}
+            name="full_name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nome Completo</FormLabel>
+                <FormControl>
+                  <Input placeholder="Seu nome" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input placeholder="seu@email.com" {...field} disabled /> {/* Email não editável */}
+                </FormControl>
+                <FormDescription>
+                  Seu email de login não pode ser alterado aqui.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-            <div className="space-y-2">
-              <Label htmlFor="companyName">Nome da Empresa *</Label>
-              <Input
-                id="companyName"
-                value={profile.company_name}
-                onChange={(e) => setProfile(prev => ({ ...prev, company_name: e.target.value }))}
-                placeholder="Nome da sua empresa"
-                required={isFirstAccess}
-              />
-            </div>
+          {/* Seção de Dados da Empresa */}
+          <h3 className="text-lg font-medium pt-4">Dados da Empresa</h3>
+          <Separator />
 
-            <div className="space-y-2">
-              <Label htmlFor="responsibleName">Nome do Responsável *</Label>
-              <Input
-                id="responsibleName"
-                value={profile.responsible_name}
-                onChange={(e) => setProfile(prev => ({ ...prev, responsible_name: e.target.value }))}
-                placeholder="Nome do responsável"
-                required={isFirstAccess}
-              />
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+             <FormField
+               control={form.control}
+               name="company_name"
+               render={({ field }) => (
+                 <FormItem>
+                   <FormLabel>Nome da Empresa</FormLabel>
+                   <FormControl>
+                     <Input placeholder="Nome da sua Empresa" {...field} value={field.value || ''} />
+                   </FormControl>
+                   <FormMessage />
+                 </FormItem>
+               )}
+             />
+             <FormField
+               control={form.control}
+               name="cnpj"
+               render={({ field }) => (
+                 <FormItem>
+                   <FormLabel>CNPJ</FormLabel>
+                   <FormControl>
+                     <Input placeholder="00.000.000/0001-00" {...field} value={field.value || ''} />
+                   </FormControl>
+                   <FormMessage />
+                 </FormItem>
+               )}
+             />
+             <FormField
+               control={form.control}
+               name="responsible_name"
+               render={({ field }) => (
+                 <FormItem>
+                   <FormLabel>Nome do Responsável</FormLabel>
+                   <FormControl>
+                     <Input placeholder="Nome do Responsável Legal" {...field} value={field.value || ''} />
+                   </FormControl>
+                   <FormMessage />
+                 </FormItem>
+               )}
+             />
+             <FormField
+               control={form.control}
+               name="responsible_phone"
+               render={({ field }) => (
+                 <FormItem>
+                   <FormLabel>Telefone do Responsável</FormLabel>
+                   <FormControl>
+                     <Input placeholder="(00) 90000-0000" {...field} value={field.value || ''} />
+                   </FormControl>
+                   <FormMessage />
+                 </FormItem>
+               )}
+             />
+             <FormField
+               control={form.control}
+               name="phone"
+               render={({ field }) => (
+                 <FormItem>
+                   <FormLabel>Telefone da Empresa</FormLabel>
+                   <FormControl>
+                     <Input placeholder="(00) 0000-0000" {...field} value={field.value || ''} />
+                   </FormControl>
+                   <FormMessage />
+                 </FormItem>
+               )}
+             />
+             <FormField
+               control={form.control}
+               name="address"
+               render={({ field }) => (
+                 <FormItem>
+                   <FormLabel>Endereço Completo</FormLabel>
+                   <FormControl>
+                     <Input placeholder="Rua, Número, Bairro, Cidade - Estado, CEP" {...field} value={field.value || ''} />
+                   </FormControl>
+                   <FormMessage />
+                 </FormItem>
+               )}
+             />
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="cnpj">CNPJ</Label>
-              <Input
-                id="cnpj"
-                value={profile.cnpj}
-                onChange={(e) => setProfile(prev => ({ ...prev, cnpj: e.target.value }))}
-                placeholder="00.000.000/0000-00"
-              />
-            </div>
+          {/* Seção de Preferências */}
+          <h3 className="text-lg font-medium pt-4">Preferências de Notificação</h3>
+          <Separator />
+          <div className="space-y-4">
+             <FormField
+               control={form.control}
+               name="notify_on_comment"
+               render={({ field }) => (
+                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                   <div className="space-y-0.5">
+                     <FormLabel className="text-base">Comentários</FormLabel>
+                     <FormDescription>
+                       Receber notificações sobre novos comentários nas tarefas.
+                     </FormDescription>
+                   </div>
+                   <FormControl>
+                     <Switch
+                       checked={field.value}
+                       onCheckedChange={field.onChange}
+                     />
+                   </FormControl>
+                 </FormItem>
+               )}
+             />
+             <FormField
+               control={form.control}
+               name="notify_on_progress"
+               render={({ field }) => (
+                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                   <div className="space-y-0.5">
+                     <FormLabel className="text-base">Atualizações de Progresso</FormLabel>
+                     <FormDescription>
+                       Receber notificações quando o status das tarefas mudar.
+                     </FormDescription>
+                   </div>
+                   <FormControl>
+                     <Switch
+                       checked={field.value}
+                       onCheckedChange={field.onChange}
+                     />
+                   </FormControl>
+                 </FormItem>
+               )}
+             />
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="address">Endereço</Label>
-              <Input
-                id="address"
-                value={profile.address}
-                onChange={(e) => setProfile(prev => ({ ...prev, address: e.target.value }))}
-                placeholder="Endereço completo"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phone">Telefone da Empresa</Label>
-              <Input
-                id="phone"
-                value={profile.phone}
-                onChange={(e) => setProfile(prev => ({ ...prev, phone: e.target.value }))}
-                placeholder="(00) 0000-0000"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="responsiblePhone">Telefone do Responsável</Label>
-              <Input
-                id="responsiblePhone"
-                value={profile.responsible_phone}
-                onChange={(e) => setProfile(prev => ({ ...prev, responsible_phone: e.target.value }))}
-                placeholder="(00) 00000-0000"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="logo">Logo da Empresa</Label>
-              <div className="flex items-center gap-4">
-                {profile.company_logo_url && (
-                  <img 
-                    src={profile.company_logo_url} 
-                    alt="Logo da empresa" 
-                    className="w-16 h-16 object-contain rounded-lg border"
-                  />
-                )}
-                <div>
-                  <input
-                    type="file"
-                    id="logo"
-                    accept="image/*"
-                    onChange={handleLogoUpload}
-                    className="hidden"
-                  />
-                  <Button
-                    variant="outline"
-                    onClick={() => document.getElementById('logo')?.click()}
-                    disabled={loading}
-                  >
-                    <Upload className="w-4 h-4 mr-2" />
-                    {profile.company_logo_url ? 'Alterar Logo' : 'Upload Logo'}
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            <Button onClick={updateProfile} disabled={loading}>
-              Salvar Alterações
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* Security Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Lock className="w-5 h-5" />
-              Segurança
-            </CardTitle>
-            <CardDescription>
-              Altere sua senha ou email.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Email Atual</Label>
-              <Input value={user?.email || ''} disabled />
-              <Button variant="outline" onClick={updateEmail} size="sm">
-                Alterar Email
-              </Button>
-            </div>
-
-            <Separator />
-
-            <div className="space-y-4">
-              <h4 className="font-medium">Alterar Senha</h4>
-              <div className="grid gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="newPassword">Nova Senha</Label>
-                  <Input
-                    id="newPassword"
-                    type="password"
-                    value={passwordData.newPassword}
-                    onChange={(e) => setPasswordData(prev => ({ ...prev, newPassword: e.target.value }))}
-                    placeholder="Nova senha"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    value={passwordData.confirmPassword}
-                    onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                    placeholder="Confirme a nova senha"
-                  />
-                </div>
-                <Button 
-                  onClick={updatePassword} 
-                  disabled={loading || !passwordData.newPassword}
-                >
-                  Alterar Senha
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Notification Settings */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bell className="w-5 h-5" />
-              Preferências de Notificação
-            </CardTitle>
-            <CardDescription>
-              Gerencie como você recebe notificações.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Notificações de Comentários</Label>
-                <p className="text-sm text-muted-foreground">
-                  Receber notificações quando houver novos comentários.
-                </p>
-              </div>
-              <Switch
-                checked={profile.notify_on_comment}
-                onCheckedChange={(checked) => setProfile(prev => ({ ...prev, notify_on_comment: checked }))}
-              />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Notificações de Progresso</Label>
-                <p className="text-sm text-muted-foreground">
-                  Receber notificações sobre atualizações de progresso.
-                </p>
-              </div>
-              <Switch
-                checked={profile.notify_on_progress}
-                onCheckedChange={(checked) => setProfile(prev => ({ ...prev, notify_on_progress: checked }))}
-              />
-            </div>
-
-            <Button onClick={updateProfile} disabled={loading}>
-              Salvar Preferências
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? <LoadingSpinner /> : 'Salvar Alterações'}
+          </Button>
+        </form>
+      </Form>
     </div>
   );
-}
+};
+
+export default ClientSettings;
