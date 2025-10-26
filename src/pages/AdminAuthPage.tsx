@@ -1,6 +1,6 @@
 // src/pages/AdminAuthPage.tsx
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react'; // Adicionado useEffect
+import { useNavigate, useLocation, Link } from 'react-router-dom'; // Adicionado useLocation
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,50 +12,72 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 const AdminAuthPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingForm, setIsLoadingForm] = useState(false); // Renomeado para evitar conflito
   const navigate = useNavigate();
+  const location = useLocation(); // Hook para obter a localização atual
   const { toast } = useToast();
-  const { signIn } = useAuth();
+  const { signIn, user, isLoading: isLoadingAuth, isAdmin } = useAuth(); // Pega user, isLoadingAuth, isAdmin
+
+  // Efeito para redirecionar se já estiver logado como admin
+  useEffect(() => {
+    // Se não estiver carregando a autenticação E o usuário existe E é admin
+    if (!isLoadingAuth && user && isAdmin) {
+      navigate('/admin/dashboard', { replace: true });
+    }
+  }, [user, isAdmin, isLoadingAuth, navigate]);
+
 
   const handleAdminSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    setIsLoadingForm(true); // Usa o estado local do formulário
 
-    // Usa a nova função signIn que retorna { success, error, roles }
-    const { success, error, roles } = await signIn(email, password);
+    // Chama signIn que agora retorna { success, error, isAdminLogin }
+    const { success, error, isAdminLogin } = await signIn(email, password);
 
     if (!success || error) {
-      // Se signIn falhou (senha errada, usuário não existe, erro ao buscar perfil)
+      // Se signIn falhou (senha errada, etc) OU houve erro
       toast({
         title: 'Acesso Não Autorizado',
-        description: 'Acesso apenas para administradores.', // Mensagem solicitada
+        description: 'Acesso apenas para administradores.',
         variant: 'destructive',
       });
     } else {
-      // Se signIn teve sucesso E o usuário TEM o role ADMIN
-      if (roles.includes('ADMIN')) {
+      // Se signIn teve sucesso (usuário autenticado e perfil carregado)
+      if (isAdminLogin) {
+         // Se o usuário logado É admin
         toast({
           title: 'Login bem-sucedido!',
           description: 'Redirecionando...',
         });
-        navigate('/admin/dashboard'); // Único redirecionamento
+        // A navegação será tratada pelo useEffect ou ProtectedRoute agora
+        // navigate('/admin/dashboard'); // REMOVIDO DAQUI
       } else {
-        // Se signIn teve sucesso MAS NÃO TEM o role ADMIN
+        // Se o usuário logado NÃO é admin (era cliente)
         toast({
           title: 'Acesso Não Autorizado',
-          description: 'Acesso apenas para administradores.', // Mensagem solicitada
+          description: 'Acesso apenas para administradores.',
           variant: 'destructive',
         });
-        // IMPORTANTE: Neste caso, o usuário (cliente) logou com sucesso.
-        // O ideal seria deslogá-lo para evitar confusão, mas vamos manter simples por ora.
-        // O ProtectedRoute impedirá o acesso às páginas admin de qualquer forma.
+         // IMPORTANTE: O cliente logou com sucesso, mas não deveria.
+         // O ProtectedRoute o impedirá de acessar /admin,
+         // mas ele ficaria preso aqui. Idealmente, deslogar ou redirecionar
+         // para /auth seria melhor, mas mantemos simples por enquanto.
       }
     }
-    setIsLoading(false);
+    setIsLoadingForm(false);
   };
 
+  // Não renderiza o formulário se já estiver logado como admin (redirecionamento pelo useEffect)
+  if (isLoadingAuth || (user && isAdmin)) {
+     return (
+       <div className="flex h-screen w-full items-center justify-center">
+         <LoadingSpinner />
+       </div>
+     );
+  }
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4"> {/* Adicionado padding */}
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4">
       <Card className="mx-auto max-w-sm w-full">
         <CardHeader>
           <CardTitle className="text-2xl text-center">Login Administrador</CardTitle>
@@ -74,7 +96,7 @@ const AdminAuthPage = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
+                disabled={isLoadingForm}
               />
             </div>
             <div className="grid gap-2">
@@ -85,11 +107,11 @@ const AdminAuthPage = () => {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
+                disabled={isLoadingForm}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? <LoadingSpinner /> : 'Entrar'}
+            <Button type="submit" className="w-full" disabled={isLoadingForm}>
+              {isLoadingForm ? <LoadingSpinner /> : 'Entrar'}
             </Button>
             <div className="mt-4 text-center text-sm">
                <Link to="/" className="underline">
