@@ -1,5 +1,5 @@
 // src/components/ProtectedRoute.tsx
-import { Navigate, useLocation } from 'react-router-dom'; // Adicionado useLocation
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from './LoadingSpinner';
 
@@ -10,19 +10,23 @@ type ProtectedRouteProps = {
 };
 
 const ProtectedRoute = ({ children, requireAdmin, requireClient }: ProtectedRouteProps) => {
-  const { user, isAdmin, isLoading, userProfile } = useAuth();
-  const location = useLocation(); // Pega a rota atual
+  // Usa o novo authStatus e isAdmin do contexto refatorado
+  const { user, isAdmin, authStatus, userProfile } = useAuth();
+  const location = useLocation();
 
-  // ESTADO DE CARREGAMENTO: Mostra spinner enquanto isLoading é true OU
-  // se o usuário existe mas o perfil ainda não carregou (evita renderização parcial)
-  if (isLoading || (user && !userProfile)) {
-    // Adiciona uma verificação extra: se não está carregando, mas user existe e profile não, loga um aviso.
-    if (!isLoading && user && !userProfile) {
-       console.warn("ProtectedRoute: User logado mas profile não encontrado após carregamento inicial. Verifique AuthContext.");
-       // Neste estado incerto, talvez seja melhor redirecionar para login para forçar recarga.
-       // return <Navigate to={requireAdmin ? "/admin/login" : "/auth"} replace />;
-    }
-    // Mostra Spinner durante o carregamento normal ou enquanto espera o perfil
+  console.log('ProtectedRoute:', { // Log de estado
+     pathname: location.pathname,
+     authStatus,
+     user: user?.id ?? 'null',
+     isAdmin,
+     requireAdmin,
+     requireClient,
+     profileLoaded: !!userProfile
+  });
+
+  // ESTADO DE CARREGAMENTO: Mostra spinner APENAS se authStatus for 'loading'
+  if (authStatus === 'loading') {
+    console.log('ProtectedRoute: Status = loading, mostrando Spinner.'); // Log
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <LoadingSpinner />
@@ -30,41 +34,51 @@ const ProtectedRoute = ({ children, requireAdmin, requireClient }: ProtectedRout
     );
   }
 
-  // ---- ESTADOS NÃO-CARREGANDO A PARTIR DAQUI ----
+  // ---- ESTADOS NÃO-CARREGANDO ('authenticated' ou 'unauthenticated') A PARTIR DAQUI ----
 
-  // CASO 1: Usuário NÃO está logado
-  if (!user) {
-    // Se tentar acessar rota protegida (admin ou cliente) sem logar, redireciona para o login apropriado
-    if (requireAdmin) return <Navigate to="/admin/login" state={{ from: location }} replace />; // Guarda rota original
-    if (requireClient) return <Navigate to="/auth" state={{ from: location }} replace />; // Guarda rota original
-    // Se não for rota protegida (raro chegar aqui com essa estrutura), permite acesso (ou redireciona para login geral?)
-    // Por segurança, vamos redirecionar para o login cliente como padrão se não for rota protegida.
-    // return <Navigate to="/auth" state={{ from: location }} replace />;
-     return children; // Permite acesso a rotas não protegidas se não estiver logado (Ex: "/")
+  // CASO 1: Usuário NÃO está autenticado (authStatus === 'unauthenticated')
+  if (authStatus === 'unauthenticated') {
+     console.log('ProtectedRoute: Status = unauthenticated.'); // Log
+    // Se tentar acessar rota protegida, redireciona para o login apropriado
+    if (requireAdmin) {
+       console.log('ProtectedRoute: Redirecionando para /admin/login.'); // Log
+       return <Navigate to="/admin/login" state={{ from: location }} replace />;
+    }
+    if (requireClient) {
+       console.log('ProtectedRoute: Redirecionando para /auth.'); // Log
+       return <Navigate to="/auth" state={{ from: location }} replace />;
+    }
+    // Se for rota pública (não requireAdmin nem requireClient), permite acesso
+     console.log('ProtectedRoute: Rota pública, permitindo acesso não autenticado.'); // Log
+    return children;
   }
 
-  // ---- Usuário ESTÁ logado a partir daqui ----
+  // ---- Usuário ESTÁ autenticado (authStatus === 'authenticated') a partir daqui ----
+   console.log('ProtectedRoute: Status = authenticated.'); // Log
 
-  // CASO 2: Usuário LOGADO tentando acessar uma PÁGINA DE LOGIN
-  // Se está logado E está na página de login admin OU cliente, redireciona para o dashboard correto
+  // CASO 2: Usuário AUTENTICADO tentando acessar uma PÁGINA DE LOGIN
+  // Redireciona para o dashboard correto baseado no isAdmin (agora confiável)
   if (location.pathname === '/admin/login' || location.pathname === '/auth') {
-    return <Navigate to={isAdmin ? '/admin/dashboard' : '/cliente/dashboard'} replace />;
+     const targetDashboard = isAdmin ? '/admin/dashboard' : '/cliente/dashboard';
+     console.log(`ProtectedRoute: Usuário logado em página de login, redirecionando para ${targetDashboard}.`); // Log
+    return <Navigate to={targetDashboard} replace />;
   }
 
-  // CASO 3: Usuário LOGADO acessando ROTA PROTEGIDA ERRADA
-  // Se a rota exige Admin, mas o usuário logado NÃO é admin
+  // CASO 3: Usuário AUTENTICADO acessando ROTA PROTEGIDA ERRADA
+  // Se a rota exige Admin, mas o usuário autenticado NÃO é admin
   if (requireAdmin && !isAdmin) {
-    // Redireciona cliente para o dashboard dele
+     console.log('ProtectedRoute: Cliente tentando acessar rota admin, redirecionando para /cliente/dashboard.'); // Log
     return <Navigate to="/cliente/dashboard" replace />;
   }
-  // Se a rota exige Cliente, mas o usuário logado É admin
+  // Se a rota exige Cliente, mas o usuário autenticado É admin
   if (requireClient && isAdmin) {
-    // Redireciona admin para o dashboard dele
+     console.log('ProtectedRoute: Admin tentando acessar rota cliente, redirecionando para /admin/dashboard.'); // Log
     return <Navigate to="/admin/dashboard" replace />;
   }
 
-  // CASO 4: Usuário LOGADO acessando ROTA PROTEGIDA CORRETA (ou rota pública)
-  // Se passou por todas as verificações anteriores, permite o acesso
+  // CASO 4: Usuário AUTENTICADO acessando ROTA PROTEGIDA CORRETA (ou rota pública)
+   console.log('ProtectedRoute: Acesso permitido.'); // Log
+  // Se passou por todas as verificações, permite o acesso
   return children;
 };
 
