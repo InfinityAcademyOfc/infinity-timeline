@@ -1,144 +1,112 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { HelmetProvider } from "react-helmet-async";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
+// src/App.tsx
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AuthProvider } from './contexts/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 
-// Pages
-import Index from "./pages/Index";
-import AuthPage from "./pages/AuthPage";
-import NotFound from "./pages/NotFound";
+// Layouts
+import AppLayout from './components/AppLayout';
+import AdminNav from './components/AdminNav';
 
-// Admin Pages
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminClients from "./pages/admin/AdminClients";
-import AdminTemplates from "./pages/admin/AdminTemplates";
-import AdminTimelines from "./pages/admin/AdminTimelines";
-import AdminClientDetails from "./pages/admin/AdminClientDetails";
+// Páginas Públicas
+import Index from './pages/Index';
+import AuthPage from './pages/AuthPage';
+import AdminAuthPage from './pages/AdminAuthPage'; // <-- IMPORT ATUALIZADO
+import NotFound from './pages/NotFound';
 
-// Client Pages
-import ClientDashboard from "./pages/client/ClientDashboard";
-import ClientTimeline from "./pages/client/ClientTimeline";
-import ClientDocuments from "./pages/client/ClientDocuments";
-import ClientIndications from "./pages/client/ClientIndications";
-import ClientProgress from "./pages/client/ClientProgress";
-import ClientSettings from "./pages/client/ClientSettings";
+// Páginas Admin (Protegidas)
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminClients from './pages/admin/AdminClients';
+import AdminClientDetails from './pages/admin/AdminClientDetails';
+import AdminTemplates from './pages/admin/AdminTemplates';
+import AdminTimelines from './pages/admin/AdminTimelines';
+import AdminSettings from './pages/admin/AdminSettings';
 
-// Admin Settings
-import AdminSettings from "./pages/admin/AdminSettings";
+// Páginas Cliente (Protegidas)
+import ClientDashboard from './pages/client/ClientDashboard';
+import ClientTimeline from './pages/client/ClientTimeline';
+import ClientProgress from './pages/client/ClientProgress';
+import ClientDocuments from './pages/client/ClientDocuments';
+import ClientIndications from './pages/client/ClientIndications';
+import ClientSettings from './pages/client/ClientSettings';
+
+import './App.css';
+import { Toaster } from './components/ui/toaster';
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <HelmetProvider>
+// Layout de Admin Simples
+const AdminLayout = () => (
+  <div className="flex min-h-screen w-full flex-col bg-muted/40">
+    <AdminNav />
+    <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+      <Outlet />
+    </main>
+  </div>
+);
+
+function App() {
+  return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/auth" element={<AuthPage />} />
-              
-              {/* Admin Routes */}
-              <Route path="/admin" element={<AuthPage adminMode />} />
-              <Route path="/admin/login" element={<AuthPage adminMode />} />
-              <Route path="/admin/dashboard" element={
-                <ProtectedRoute requireAdmin>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/clients" element={
-                <ProtectedRoute requireAdmin>
-                  <AdminClients />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/templates" element={
-                <ProtectedRoute requireAdmin>
-                  <AdminTemplates />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/timelines" element={
-                <ProtectedRoute requireAdmin>
-                  <AdminTimelines />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/clients/:clientId" element={
-                <ProtectedRoute requireAdmin>
-                  <AdminClientDetails />
-                </ProtectedRoute>
-              } />
+        <Router>
+          <Routes>
+            {/* === Rotas Públicas === */}
+            <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<AuthPage />} /> {/* Rota Login Cliente */}
+            <Route path="/admin/login" element={<AdminAuthPage />} /> {/* Rota Login Admin */}
 
-              {/* Client Routes */}
-              <Route path="/cliente" element={
-                <ProtectedRoute requireClient>
-                  <Navigate to="/cliente/dashboard" replace />
-                </ProtectedRoute>
-              } />
-              <Route path="/cliente/dashboard" element={
-                <ProtectedRoute requireClient>
-                  <ClientDashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/cliente/cronograma" element={
-                <ProtectedRoute requireClient>
-                  <ClientTimeline />
-                </ProtectedRoute>
-              } />
-              <Route path="/timeline" element={
-                <ProtectedRoute requireClient>
-                  <ClientTimeline />
-                </ProtectedRoute>
-              } />
-              <Route path="/cliente/indicacoes" element={
-                <ProtectedRoute requireClient>
-                  <ClientIndications />
-                </ProtectedRoute>
-              } />
-              <Route path="/cliente/documentos" element={
-                <ProtectedRoute requireClient>
-                  <ClientDocuments />
-                </ProtectedRoute>
-              } />
-              <Route path="/documents" element={
-                <ProtectedRoute requireClient>
-                  <ClientDocuments />
-                </ProtectedRoute>
-              } />
-              <Route path="/progress" element={
-                <ProtectedRoute requireClient>
-                  <ClientProgress />
-                </ProtectedRoute>
-              } />
-              <Route path="/cliente/progresso" element={
-                <ProtectedRoute requireClient>
-                  <ClientProgress />
-                </ProtectedRoute>
-              } />
-
-              <Route path="/settings" element={
-                <ProtectedRoute requireClient>
-                  <ClientSettings />
-                </ProtectedRoute>
-              } />
-              <Route path="/admin/settings" element={
+            {/* === Rotas de Admin (Protegidas) === */}
+            <Route
+              path="/admin"
+              element={
                 <ProtectedRoute requireAdmin>
-                  <AdminSettings />
+                  <AdminLayout />
                 </ProtectedRoute>
-              } />
+              }
+            >
+              <Route index element={<Navigate to="dashboard" replace />} />
+              <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="clients" element={<AdminClients />} />
+              <Route path="clients/:id" element={<AdminClientDetails />} />
+              <Route path="templates" element={<AdminTemplates />} />
+              <Route path="timelines" element={<AdminTimelines />} />
+              <Route path="settings" element={<AdminSettings />} />
+            </Route>
 
-              {/* 404 Route */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
+            {/* === Rotas de Cliente (Protegidas) === */}
+            <Route
+              path="/cliente"
+              element={
+                <ProtectedRoute requireClient>
+                  <AppLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Navigate to="dashboard" replace />} />
+              <Route path="dashboard" element={<ClientDashboard />} />
+              <Route path="timeline" element={<ClientTimeline />} />
+              <Route path="progress" element={<ClientProgress />} />
+              <Route path="documents" element={<ClientDocuments />} />
+              <Route path="indicacoes" element={<ClientIndications />} />
+              <Route path="settings" element={<ClientSettings />} />
+            </Route>
+
+            {/* === Redirecionamentos / Aliases === */}
+            <Route path="/timeline" element={<Navigate to="/cliente/timeline" replace />} />
+            <Route path="/documentos" element={<Navigate to="/cliente/documentos" replace />} />
+            <Route path="/indicacoes" element={<Navigate to="/cliente/indicacoes" replace />} />
+            <Route path="/progresso" element={<Navigate to="/cliente/progresso" replace />} />
+            <Route path="/configuracoes" element={<Navigate to="/cliente/configuracoes" replace />} />
+            <Route path="/dashboard" element={<Navigate to="/cliente/dashboard" replace />} />
+
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Router>
+        <Toaster />
       </AuthProvider>
     </QueryClientProvider>
-  </HelmetProvider>
-);
+  );
+}
 
 export default App;
