@@ -21,45 +21,45 @@ const AdminAuthPage = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    const { error, roles } = await signIn(email, password);
+    // Usa a nova função signIn que retorna { success, error, roles }
+    const { success, error, roles } = await signIn(email, password);
 
-    // Trata erro genérico de login primeiro (senha errada, usuário não existe)
-    if (error) {
+    if (!success || error) {
+      // Se signIn falhou (senha errada, usuário não existe, erro ao buscar perfil)
       toast({
-        title: 'Erro no Login',
-        // Mensagem genérica para não dar pistas se o usuário existe mas não é admin
-        description: 'Verifique suas credenciais.',
+        title: 'Acesso Não Autorizado',
+        description: 'Acesso apenas para administradores.', // Mensagem solicitada
         variant: 'destructive',
       });
     } else {
-      // Se o login foi SUCESSO, verifica se TEM o role ADMIN
+      // Se signIn teve sucesso E o usuário TEM o role ADMIN
       if (roles.includes('ADMIN')) {
         toast({
           title: 'Login bem-sucedido!',
-          description: 'Redirecionando para o painel de controle...',
+          description: 'Redirecionando...',
         });
-        navigate('/admin/dashboard'); // ÚNICO redirecionamento possível
+        navigate('/admin/dashboard'); // Único redirecionamento
       } else {
-        // Se logou com sucesso MAS NÃO É ADMIN
+        // Se signIn teve sucesso MAS NÃO TEM o role ADMIN
         toast({
           title: 'Acesso Não Autorizado',
-          description: 'Acesso apenas para administradores.', // Mensagem específica
+          description: 'Acesso apenas para administradores.', // Mensagem solicitada
           variant: 'destructive',
         });
-        // IMPORTANTE: Não faz logout aqui, apenas não redireciona.
-        // O usuário tecnicamente logou, mas não pode acessar nada.
-        // O ProtectedRoute vai barrá-lo se tentar navegar.
+        // IMPORTANTE: Neste caso, o usuário (cliente) logou com sucesso.
+        // O ideal seria deslogá-lo para evitar confusão, mas vamos manter simples por ora.
+        // O ProtectedRoute impedirá o acesso às páginas admin de qualquer forma.
       }
     }
     setIsLoading(false);
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/40">
-      <Card className="mx-auto max-w-sm w-full"> {/* Adicionado w-full */}
+    <div className="flex min-h-screen items-center justify-center bg-muted/40 p-4"> {/* Adicionado padding */}
+      <Card className="mx-auto max-w-sm w-full">
         <CardHeader>
-          <CardTitle className="text-2xl text-center">Login Administrador</CardTitle> {/* Centralizado */}
-          <CardDescription className="text-center"> {/* Centralizado */}
+          <CardTitle className="text-2xl text-center">Login Administrador</CardTitle>
+          <CardDescription className="text-center">
             Acesso restrito ao painel de controle.
           </CardDescription>
         </CardHeader>
@@ -70,7 +70,7 @@ const AdminAuthPage = () => {
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@infinitytimeline.com" // Exemplo mais claro
+                placeholder="admin@infinitytimeline.com"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -78,9 +78,7 @@ const AdminAuthPage = () => {
               />
             </div>
             <div className="grid gap-2">
-              <div className="flex items-center">
-                <Label htmlFor="password">Senha</Label>
-              </div>
+              <Label htmlFor="password">Senha</Label>
               <Input
                 id="password"
                 type="password"
@@ -91,10 +89,9 @@ const AdminAuthPage = () => {
               />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? <LoadingSpinner /> : 'Entrar'} {/* Texto simplificado */}
+              {isLoading ? <LoadingSpinner /> : 'Entrar'}
             </Button>
-            {/* Link para login de cliente removido para isolamento total */}
-             <div className="mt-4 text-center text-sm">
+            <div className="mt-4 text-center text-sm">
                <Link to="/" className="underline">
                  Voltar para o Início
                </Link>
