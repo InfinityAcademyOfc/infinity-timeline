@@ -1,4 +1,4 @@
-// src/pages/AdminAuthPage.tsx
+// src/pages/AuthPage.tsx
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import LoadingSpinner from '@/components/LoadingSpinner';
 
-const AdminAuthPage = () => {
+const AuthPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -17,7 +17,7 @@ const AdminAuthPage = () => {
   const { toast } = useToast();
   const { signIn } = useAuth();
 
-  const handleAdminSignIn = async (e: React.FormEvent) => {
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
@@ -30,16 +30,16 @@ const AdminAuthPage = () => {
         variant: 'destructive',
       });
     } else {
-      if (roles.includes('ADMIN')) {
-        toast({
+      if (!roles.includes('ADMIN')) {
+         toast({
           title: 'Login bem-sucedido!',
-          description: 'Redirecionando para o painel de controle...',
+          description: 'Redirecionando para sua área...',
         });
-        navigate('/admin/dashboard');
+        navigate('/cliente/dashboard'); // Redireciona Cliente
       } else {
         toast({
-          title: 'Acesso Não Autorizado',
-          description: 'Esta área é restrita a administradores.',
+          title: 'Acesso Incorreto',
+          description: 'Administradores devem usar a página de login de admin.',
           variant: 'destructive',
         });
       }
@@ -51,19 +51,19 @@ const AdminAuthPage = () => {
     <div className="flex min-h-screen items-center justify-center bg-muted/40">
       <Card className="mx-auto max-w-sm">
         <CardHeader>
-          <CardTitle className="text-2xl">Login Administrador</CardTitle>
+          <CardTitle className="text-2xl">Login Cliente</CardTitle>
           <CardDescription>
-            Entre com seu email e senha de administrador.
+            Entre com seu email e senha para acessar sua conta.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleAdminSignIn} className="grid gap-4">
+          <form onSubmit={handleSignIn} className="grid gap-4">
             <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@exemplo.com"
+                placeholder="cliente@exemplo.com"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -84,12 +84,13 @@ const AdminAuthPage = () => {
               />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? <LoadingSpinner /> : 'Entrar como Admin'}
+              {isLoading ? <LoadingSpinner /> : 'Entrar'}
             </Button>
+            {/* Link Atualizado */}
             <div className="mt-4 text-center text-sm">
-              Não é administrador?{' '}
-              <Link to="/auth" className="underline">
-                Login de Cliente
+              É administrador?{' '}
+              <Link to="/admin/login" className="underline"> {/* <-- CORRIGIDO */}
+                Login de Admin
               </Link>
             </div>
           </form>
@@ -99,4 +100,4 @@ const AdminAuthPage = () => {
   );
 };
 
-export default AdminAuthPage;
+export default AuthPage;
