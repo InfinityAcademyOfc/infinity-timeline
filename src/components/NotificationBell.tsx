@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { toast } from '@/hooks/use-toast';
 
 interface Notification {
   id: number;
@@ -43,6 +44,11 @@ export const NotificationBell = () => {
         },
         (payload) => {
           console.log('Nova notificação recebida!', payload);
+          const newNotification = payload.new as Notification;
+          toast({
+            title: "Nova notificação",
+            description: newNotification.message,
+          });
           loadNotifications();
         }
       )

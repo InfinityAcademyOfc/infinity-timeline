@@ -82,14 +82,13 @@ serve(async (req) => {
 
     console.log(`Created user with ID: ${newUser.user.id}`);
 
-    // Create profile record
+    // Create profile record (without obsolete 'role' column)
     const { error: profileInsertError } = await supabaseClient
       .from('profiles')
       .insert({
         id: newUser.user.id,
         email: email,
         full_name: fullName,
-        role: 'CLIENTE',
         points: 0
       });
 

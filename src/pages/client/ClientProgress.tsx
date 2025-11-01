@@ -16,6 +16,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
+import { AppLayout } from '@/components/AppLayout';
 
 const indicationSchema = z.object({
   indicated_name: z.string().min(1, 'Nome é obrigatório'),
@@ -169,13 +170,13 @@ const ClientProgress = () => {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-8">
+    <AppLayout showClientNav>
       <SEOHelmet 
         title="Meu Progresso" 
         description="Acompanhe seu progresso, métricas e faça solicitações."
       />
       
-      <h1 className="text-3xl font-bold">Meu Progresso</h1>
+      <h1 className="text-3xl font-bold mb-8">Meu Progresso</h1>
 
       {/* KPIs Section */}
       <section>
@@ -459,7 +460,7 @@ const ClientProgress = () => {
           )}
         </section>
       </div>
-    </div>
+    </AppLayout>
   );
 };
 

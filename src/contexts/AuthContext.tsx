@@ -38,40 +38,54 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
         // Fetch user profile and roles after auth state change
         if (session?.user) {
+          // Use setTimeout to avoid blocking
           setTimeout(async () => {
             try {
               // Fetch profile
-              const { data: profile } = await supabase
+              const { data: profile, error: profileError } = await supabase
                 .from('profiles')
                 .select('*')
                 .eq('id', session.user.id)
                 .single();
               
-              // Fetch user roles
-              const { data: roles } = await supabase
+              if (profileError) {
+                console.error('Error fetching profile:', profileError);
+                setUserProfile(null);
+                setLoading(false);
+                return;
+              }
+              
+              // Fetch user roles from user_roles table
+              const { data: rolesData, error: rolesError } = await supabase
                 .from('user_roles')
                 .select('role')
                 .eq('user_id', session.user.id);
               
+              if (rolesError) {
+                console.error('Error fetching roles:', rolesError);
+              }
+              
               setUserProfile({
                 ...profile,
-                roles: roles || []
+                roles: rolesData || []
               });
             } catch (error) {
-              console.error('Error fetching profile:', error);
+              console.error('Error in auth state change:', error);
+              setUserProfile(null);
+            } finally {
+              setLoading(false);
             }
           }, 0);
         } else {
           setUserProfile(null);
+          setLoading(false);
         }
-        
-        setLoading(false);
       }
     );
 
@@ -79,7 +93,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
-      setLoading(false);
+      if (!session) {
+        setLoading(false);
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -155,11 +171,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           return { error: profileError, roles: [] };
         }
 
-        // Buscar roles separadamente
-        const { data: rolesData } = await supabase
+        // Buscar roles da tabela user_roles
+        const { data: rolesData, error: rolesError } = await supabase
           .from('user_roles')
           .select('role')
           .eq('user_id', signInData.user.id);
+
+        if (rolesError) {
+          console.error('Error fetching roles:', rolesError);
+        }
 
         const roles = rolesData?.map((r: any) => r.role) || [];
         

@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Upload, User, Lock, Bell } from 'lucide-react';
+import { AppLayout } from '@/components/AppLayout';
 
 export default function ClientSettings() {
   const { user } = useAuth();
@@ -216,13 +217,13 @@ export default function ClientSettings() {
   };
 
   return (
-    <div className="container mx-auto py-8 space-y-8">
+    <AppLayout showClientNav>
       <SEOHelmet 
         title="Configurações" 
         description="Gerencie suas configurações de perfil e preferências."
       />
       
-      <div className="space-y-2">
+      <div className="space-y-2 mb-8">
         <h1 className="text-3xl font-bold">Configurações</h1>
         <p className="text-muted-foreground">
           Gerencie suas informações pessoais e preferências de conta.
@@ -461,6 +462,6 @@ export default function ClientSettings() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </AppLayout>
   );
 }

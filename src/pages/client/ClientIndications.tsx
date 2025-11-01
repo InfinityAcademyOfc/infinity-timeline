@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { ErrorMessage } from '@/components/ErrorMessage';
 import { GlowButton } from '@/components/GlowButton';
+import { AppLayout } from '@/components/AppLayout';
 
 const ClientIndications = () => {
   const { user } = useAuth();
@@ -96,7 +97,7 @@ const ClientIndications = () => {
   const approvedCount = indications?.filter(ind => ind.status === 'CONCLUIDO').length || 0;
 
   return (
-    <div className="min-h-screen p-6 animate-fade-in-up">
+    <AppLayout showClientNav>
       <SEOHelmet 
         title="Minhas Indicações" 
         description="Gerencie suas indicações e ganhe pontos."
@@ -267,7 +268,7 @@ const ClientIndications = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </AppLayout>
   );
 };
 

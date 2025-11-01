@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Folder, FileText, Link as LinkIcon, Download } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { AppLayout } from '@/components/AppLayout';
 
 const ClientDocuments = () => {
   const { user } = useAuth();
@@ -76,7 +77,7 @@ const ClientDocuments = () => {
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <AppLayout showClientNav>
       <SEOHelmet 
         title="Meus Documentos" 
         description="Gerencie e visualize documentos relacionados aos seus projetos."
@@ -142,7 +143,7 @@ const ClientDocuments = () => {
           ))}
         </div>
       )}
-    </div>
+    </AppLayout>
   );
 };
 

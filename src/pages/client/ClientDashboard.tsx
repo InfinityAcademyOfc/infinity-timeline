@@ -77,8 +77,8 @@ const ClientDashboard = () => {
   }
 
   return (
-    <AppLayout>
-      <SEOHelmet 
+    <AppLayout showClientNav>
+      <SEOHelmet
         title="Dashboard Cliente" 
         description="Acompanhe o progresso dos seus projetos e cronogramas."
       />

@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { LogOut } from 'lucide-react';
 import { NotificationBell } from './NotificationBell';
 import { AdminNav } from './AdminNav';
+import { ClientNav } from './ClientNav';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog';
 import { Input } from './ui/input';
@@ -14,9 +15,10 @@ import { useToast } from '@/hooks/use-toast';
 interface AppLayoutProps {
   children: React.ReactNode;
   showAdminNav?: boolean;
+  showClientNav?: boolean;
 }
 
-export const AppLayout = ({ children, showAdminNav = false }: AppLayoutProps) => {
+export const AppLayout = ({ children, showAdminNav = false, showClientNav = false }: AppLayoutProps) => {
   const { signOut, user, isAdmin, userProfile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -38,7 +40,8 @@ export const AppLayout = ({ children, showAdminNav = false }: AppLayoutProps) =>
 
   const handleLogout = async () => {
     await signOut();
-    navigate('/auth');
+    // Redireciona para a página de login adequada
+    navigate(isAdmin ? '/admin/login' : '/auth');
   };
 
   const handleSaveOnboarding = async () => {
@@ -158,6 +161,7 @@ export const AppLayout = ({ children, showAdminNav = false }: AppLayoutProps) =>
       
       <main className="container mx-auto px-4 py-8">
         {showAdminNav && <AdminNav />}
+        {showClientNav && <ClientNav />}
         {children}
       </main>
       </div>

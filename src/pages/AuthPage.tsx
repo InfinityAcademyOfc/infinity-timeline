@@ -14,7 +14,7 @@ interface AuthPageProps {
 }
 
 const AuthPage = ({ adminMode = false }: AuthPageProps) => {
-  const { user, signIn, signUp, loading, isAdmin } = useAuth();
+  const { user, signIn, signUp, signOut, loading, isAdmin } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -36,8 +36,15 @@ const AuthPage = ({ adminMode = false }: AuthPageProps) => {
     const { error, roles } = await signIn(email, password);
     setIsLoading(false);
     
-    // Redirecionar não é necessário aqui - o Navigate acima cuida disso
-    // mas em caso de erro, o usuário permanece na página
+    if (!error && adminMode) {
+      // Verifica se o usuário que logou é realmente um admin
+      const hasAdminRole = roles.includes('ADMIN');
+      if (!hasAdminRole) {
+        // Força logout se tentar login admin sem ser admin
+        await signOut();
+        return;
+      }
+    }
   };
 
   const handleSignUp = async (e: React.FormEvent) => {

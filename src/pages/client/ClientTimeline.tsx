@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import TimelineView from '@/components/TimelineView';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar, Clock, AlertCircle } from 'lucide-react';
+import { AppLayout } from '@/components/AppLayout';
 
 export interface TimelineItem {
   id: string;
@@ -158,14 +159,14 @@ const ClientTimeline = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-muted/20">
+    <AppLayout showClientNav>
       <SEOHelmet 
         title="Cronograma Infinity" 
         description="Acompanhe sua jornada e visualize seus marcos em uma linha do tempo interativa."
       />
       
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center mb-8 space-y-2">
+      <div className="space-y-4">
+        <div className="text-center space-y-2">
           <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
             {timelineData.timelineName}
           </h1>
@@ -183,7 +184,7 @@ const ClientTimeline = () => {
 
         <TimelineView timelineData={timelineData} />
       </div>
-    </div>
+    </AppLayout>
   );
 };
 
