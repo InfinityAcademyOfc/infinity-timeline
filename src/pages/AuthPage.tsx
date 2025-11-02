@@ -20,13 +20,18 @@ const AuthPage = ({ adminMode = false }: AuthPageProps) => {
   const [fullName, setFullName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Redirect if already authenticated
+  // CRITICAL: Only redirect after loading is complete (roles are loaded)
   if (user && !loading) {
-    // Se está no modo admin, só redireciona se for realmente admin
+    // Admin mode: only redirect to admin dashboard if user is actually admin
     if (adminMode) {
-      return isAdmin ? <Navigate to="/admin/dashboard" replace /> : <Navigate to="/auth" replace />;
+      if (isAdmin) {
+        return <Navigate to="/admin/dashboard" replace />;
+      }
+      // If in admin mode but not admin, force logout and stay on admin login
+      signOut();
+      return null;
     }
-    // Se não está no modo admin, redireciona baseado no role
+    // Normal mode: redirect based on role
     return <Navigate to={isAdmin ? "/admin/dashboard" : "/cliente/dashboard"} replace />;
   }
 

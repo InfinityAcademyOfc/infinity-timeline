@@ -38,47 +38,53 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
         
         // Fetch user profile and roles after auth state change
         if (session?.user) {
-          try {
-            // Fetch profile
-            const { data: profile, error: profileError } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', session.user.id)
-              .single();
-            
-            if (profileError) {
-              console.error('Error fetching profile:', profileError);
+          // Keep loading true until profile and roles are loaded
+          setLoading(true);
+          
+          // Use setTimeout(0) to prevent deadlock (async operations in auth callback)
+          setTimeout(async () => {
+            try {
+              // Fetch profile
+              const { data: profile, error: profileError } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', session.user.id)
+                .single();
+              
+              if (profileError) {
+                console.error('Error fetching profile:', profileError);
+                setUserProfile(null);
+                setLoading(false);
+                return;
+              }
+              
+              // Fetch user roles from user_roles table
+              const { data: rolesData, error: rolesError } = await supabase
+                .from('user_roles')
+                .select('role')
+                .eq('user_id', session.user.id);
+              
+              if (rolesError) {
+                console.error('Error fetching roles:', rolesError);
+              }
+              
+              setUserProfile({
+                ...profile,
+                roles: rolesData || []
+              });
+              setLoading(false);
+            } catch (error) {
+              console.error('Error in auth state change:', error);
               setUserProfile(null);
               setLoading(false);
-              return;
             }
-            
-            // Fetch user roles from user_roles table
-            const { data: rolesData, error: rolesError } = await supabase
-              .from('user_roles')
-              .select('role')
-              .eq('user_id', session.user.id);
-            
-            if (rolesError) {
-              console.error('Error fetching roles:', rolesError);
-            }
-            
-            setUserProfile({
-              ...profile,
-              roles: rolesData || []
-            });
-            setLoading(false);
-          } catch (error) {
-            console.error('Error in auth state change:', error);
-            setUserProfile(null);
-            setLoading(false);
-          }
+          }, 0);
         } else {
           setUserProfile(null);
           setLoading(false);
@@ -93,6 +99,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (!session) {
         setLoading(false);
       }
+      // If there's a session, loading will be handled by onAuthStateChange
     });
 
     return () => subscription.unsubscribe();
@@ -183,7 +190,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
         const roles = rolesData?.map((r: any) => r.role) || [];
         
-        // Update profile with roles before setting loading to false
+        // Update profile with roles immediately
         setUserProfile({
           ...profileData,
           roles: rolesData || []
@@ -194,7 +201,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           description: "Bem-vindo de volta!",
         });
 
-        // Loading will be set to false by onAuthStateChange
+        // Keep loading true - onAuthStateChange will set it to false after confirming roles
         return { error: null, roles };
       }
 
