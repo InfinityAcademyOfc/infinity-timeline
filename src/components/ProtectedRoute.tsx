@@ -31,7 +31,7 @@ export const ProtectedRoute = ({ children, requireAdmin = false, requireClient =
 
   // Non-admin trying to access admin routes
   if (requireAdmin && !isAdmin) {
-    return <Navigate to="/cliente/dashboard" replace />;
+    return <Navigate to="/admin/login" state={{ from: location, error: 'not_admin' }} replace />;
   }
 
   return <>{children}</>;

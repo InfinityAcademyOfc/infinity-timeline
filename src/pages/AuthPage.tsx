@@ -27,12 +27,11 @@ const AuthPage = ({ adminMode = false }: AuthPageProps) => {
       if (isAdmin) {
         return <Navigate to="/admin/dashboard" replace />;
       }
-      // If in admin mode but not admin, force logout and stay on admin login
-      signOut();
-      return null;
+      // Not admin: keep user on admin login page without logging out
+    } else {
+      // Normal mode: redirect based on role
+      return <Navigate to={isAdmin ? "/admin/dashboard" : "/cliente/dashboard"} replace />;
     }
-    // Normal mode: redirect based on role
-    return <Navigate to={isAdmin ? "/admin/dashboard" : "/cliente/dashboard"} replace />;
   }
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -42,13 +41,7 @@ const AuthPage = ({ adminMode = false }: AuthPageProps) => {
     setIsLoading(false);
     
     if (!error && adminMode) {
-      // Verifica se o usuário que logou é realmente um admin
-      const hasAdminRole = roles.includes('ADMIN');
-      if (!hasAdminRole) {
-        // Força logout se tentar login admin sem ser admin
-        await signOut();
-        return;
-      }
+      // Admin validation happens after roles load; no logout here
     }
   };
 
