@@ -62,11 +62,15 @@ serve(async (req) => {
     console.log(`Creating client: ${fullName} (${email})`);
 
     // Create user in auth.users using admin client
+    // The handle_new_user trigger will automatically:
+    // 1. Create profile in profiles table
+    // 2. Create CLIENTE role in user_roles table
     const { data: newUser, error: createUserError } = await supabaseClient.auth.admin.createUser({
       email,
       password,
       user_metadata: {
-        full_name: fullName
+        full_name: fullName,
+        role: 'CLIENTE' // Used by handle_new_user trigger
       },
       email_confirm: true // Auto-confirm email for admin-created users
     });
@@ -82,46 +86,41 @@ serve(async (req) => {
 
     console.log(`Created user with ID: ${newUser.user.id}`);
 
-    // Create profile record (without obsolete 'role' column)
-    const { error: profileInsertError } = await supabaseClient
+    // Wait a moment for trigger to complete
+    await new Promise(resolve => setTimeout(resolve, 500));
+
+    // Verify that profile and role were created by trigger
+    const { data: profile, error: profileError } = await supabaseClient
       .from('profiles')
-      .insert({
-        id: newUser.user.id,
-        email: email,
-        full_name: fullName,
-        points: 0
-      });
+      .select('id, email, full_name')
+      .eq('id', newUser.user.id)
+      .single();
 
-    if (profileInsertError) {
-      console.error('Error creating profile:', profileInsertError);
-      
-      // Rollback: delete the auth user if profile creation failed
+    if (profileError || !profile) {
+      console.error('Profile not found after user creation:', profileError);
+      // Rollback: delete the auth user
       await supabaseClient.auth.admin.deleteUser(newUser.user.id);
-      
-      throw new Error(`Failed to create user profile: ${profileInsertError.message}`);
+      throw new Error('Failed to create user profile via trigger');
     }
 
-    console.log(`Successfully created client profile for: ${email}`);
+    console.log(`Successfully verified client profile for: ${email}`);
 
-    // Insert CLIENTE role in user_roles table
-    const { error: roleInsertError } = await supabaseClient
+    // Verify role was created
+    const { data: roleData, error: roleCheckError } = await supabaseClient
       .from('user_roles')
-      .insert({
-        user_id: newUser.user.id,
-        role: 'CLIENTE'
-      });
+      .select('role')
+      .eq('user_id', newUser.user.id)
+      .eq('role', 'CLIENTE')
+      .single();
 
-    if (roleInsertError) {
-      console.error('Error creating user role:', roleInsertError);
-      
-      // Rollback: delete profile and auth user if role creation failed
-      await supabaseClient.from('profiles').delete().eq('id', newUser.user.id);
+    if (roleCheckError || !roleData) {
+      console.error('Role not found after user creation:', roleCheckError);
+      // Rollback: delete the auth user (profile will cascade)
       await supabaseClient.auth.admin.deleteUser(newUser.user.id);
-      
-      throw new Error(`Failed to create user role: ${roleInsertError.message}`);
+      throw new Error('Failed to create CLIENTE role via trigger');
     }
 
-    console.log(`Successfully created CLIENTE role for: ${email}`);
+    console.log(`Successfully verified CLIENTE role for: ${email}`);
 
     return new Response(
       JSON.stringify({ 
