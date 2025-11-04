@@ -37,6 +37,17 @@ const AdminClientDetails = () => {
     queryFn: async () => {
       if (!clientId) throw new Error('Client ID is required');
       
+      // Primeiro verificar se o usuário é um cliente
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', clientId)
+        .eq('role', 'CLIENTE')
+        .maybeSingle();
+
+      if (roleError) throw roleError;
+      if (!roleData) throw new Error('User is not a client');
+
       const { data, error } = await supabase
         .from('profiles')
         .select(`
@@ -51,7 +62,6 @@ const AdminClientDetails = () => {
           )
         `)
         .eq('id', clientId)
-        .eq('role', 'CLIENTE')
         .single();
       
       if (error) throw error;

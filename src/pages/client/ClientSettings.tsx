@@ -183,13 +183,13 @@ export default function ClientSettings() {
       const fileName = `${user.id}-logo.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
-        .from('documents')
+        .from('public-assets')
         .upload(`logos/${fileName}`, file, { upsert: true });
 
       if (uploadError) throw uploadError;
 
       const { data: { publicUrl } } = supabase.storage
-        .from('documents')
+        .from('public-assets')
         .getPublicUrl(`logos/${fileName}`);
 
       const { error: updateError } = await supabase

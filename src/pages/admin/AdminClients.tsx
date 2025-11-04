@@ -28,6 +28,20 @@ const AdminClients = () => {
   const { data: clients, isLoading } = useQuery({
     queryKey: ['admin-clients'],
     queryFn: async () => {
+      // Buscar apenas usuários que têm role CLIENTE na tabela user_roles
+      const { data: clientRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id')
+        .eq('role', 'CLIENTE');
+
+      if (rolesError) throw rolesError;
+      
+      const clientIds = clientRoles?.map(r => r.user_id) || [];
+      
+      if (clientIds.length === 0) {
+        return [];
+      }
+
       const { data, error } = await supabase
         .from('profiles')
         .select(`
@@ -39,7 +53,7 @@ const AdminClients = () => {
             end_date
           )
         `)
-        .eq('role', 'CLIENTE')
+        .in('id', clientIds)
         .order('created_at', { ascending: false });
       
       if (error) throw error;

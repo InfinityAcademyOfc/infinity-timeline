@@ -359,7 +359,6 @@ export type Database = {
           points: number
           responsible_name: string | null
           responsible_phone: string | null
-          role: Database["public"]["Enums"]["user_role"]
           updated_at: string
         }
         Insert: {
@@ -378,7 +377,6 @@ export type Database = {
           points?: number
           responsible_name?: string | null
           responsible_phone?: string | null
-          role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }
         Update: {
@@ -397,7 +395,6 @@ export type Database = {
           points?: number
           responsible_name?: string | null
           responsible_phone?: string | null
-          role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
         }
         Relationships: []
@@ -678,6 +675,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin: { Args: never; Returns: boolean }
+      is_client: { Args: { user_id_param: string }; Returns: boolean }
     }
     Enums: {
       app_role: "ADMIN" | "CLIENTE"
