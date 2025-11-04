@@ -22,6 +22,7 @@ import AdminClientDetails from "./pages/admin/AdminClientDetails";
 // Client Pages
 import ClientDashboard from "./pages/client/ClientDashboard";
 import ClientTimeline from "./pages/client/ClientTimeline";
+import ClientTimelineFlow from "./pages/client/ClientTimelineFlow";
 import ClientDocuments from "./pages/client/ClientDocuments";
 import ClientIndications from "./pages/client/ClientIndications";
 import ClientProgress from "./pages/client/ClientProgress";
@@ -92,6 +93,11 @@ const App = () => (
               <Route path="/timeline" element={
                 <ProtectedRoute requireClient>
                   <ClientTimeline />
+                </ProtectedRoute>
+              } />
+              <Route path="/cliente/cronograma-flow" element={
+                <ProtectedRoute requireClient>
+                  <ClientTimelineFlow />
                 </ProtectedRoute>
               } />
               <Route path="/cliente/indicacoes" element={

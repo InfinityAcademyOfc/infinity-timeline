@@ -447,6 +447,67 @@ export type Database = {
         }
         Relationships: []
       }
+      timeline_edges: {
+        Row: {
+          animated: boolean | null
+          client_timeline_id: string
+          color: string | null
+          created_at: string
+          id: string
+          label: string | null
+          source_node_id: string
+          style: string | null
+          target_node_id: string
+          updated_at: string
+        }
+        Insert: {
+          animated?: boolean | null
+          client_timeline_id: string
+          color?: string | null
+          created_at?: string
+          id?: string
+          label?: string | null
+          source_node_id: string
+          style?: string | null
+          target_node_id: string
+          updated_at?: string
+        }
+        Update: {
+          animated?: boolean | null
+          client_timeline_id?: string
+          color?: string | null
+          created_at?: string
+          id?: string
+          label?: string | null
+          source_node_id?: string
+          style?: string | null
+          target_node_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timeline_edges_client_timeline_id_fkey"
+            columns: ["client_timeline_id"]
+            isOneToOne: false
+            referencedRelation: "client_timelines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timeline_edges_source_node_id_fkey"
+            columns: ["source_node_id"]
+            isOneToOne: false
+            referencedRelation: "timeline_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timeline_edges_target_node_id_fkey"
+            columns: ["target_node_id"]
+            isOneToOne: false
+            referencedRelation: "timeline_nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       timeline_item_links: {
         Row: {
           created_at: string | null
@@ -553,6 +614,291 @@ export type Database = {
             columns: ["template_item_id"]
             isOneToOne: false
             referencedRelation: "timeline_template_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      timeline_node_comments: {
+        Row: {
+          author_id: string
+          content: string
+          created_at: string
+          id: string
+          node_id: string
+          position: string | null
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          content: string
+          created_at?: string
+          id?: string
+          node_id: string
+          position?: string | null
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          node_id?: string
+          position?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timeline_node_comments_node_id_fkey"
+            columns: ["node_id"]
+            isOneToOne: false
+            referencedRelation: "timeline_nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      timeline_node_documents: {
+        Row: {
+          created_at: string
+          description: string | null
+          file_path: string
+          file_size: number | null
+          file_type: string | null
+          id: string
+          node_id: string
+          title: string
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          file_path: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          node_id: string
+          title: string
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          file_path?: string
+          file_size?: number | null
+          file_type?: string | null
+          id?: string
+          node_id?: string
+          title?: string
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timeline_node_documents_node_id_fkey"
+            columns: ["node_id"]
+            isOneToOne: false
+            referencedRelation: "timeline_nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      timeline_node_kanban_boards: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          node_id: string
+          position: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          node_id: string
+          position?: number
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          node_id?: string
+          position?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timeline_node_kanban_boards_node_id_fkey"
+            columns: ["node_id"]
+            isOneToOne: false
+            referencedRelation: "timeline_nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      timeline_node_kanban_cards: {
+        Row: {
+          assigned_to: string | null
+          board_id: string
+          checklist: Json | null
+          created_at: string
+          description: string | null
+          id: string
+          links: string[] | null
+          position: number
+          progress: number | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          board_id: string
+          checklist?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          links?: string[] | null
+          position?: number
+          progress?: number | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          board_id?: string
+          checklist?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          links?: string[] | null
+          position?: number
+          progress?: number | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timeline_node_kanban_cards_board_id_fkey"
+            columns: ["board_id"]
+            isOneToOne: false
+            referencedRelation: "timeline_node_kanban_boards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      timeline_node_links: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          node_id: string
+          thumbnail_url: string | null
+          title: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          node_id: string
+          thumbnail_url?: string | null
+          title: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          node_id?: string
+          thumbnail_url?: string | null
+          title?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timeline_node_links_node_id_fkey"
+            columns: ["node_id"]
+            isOneToOne: false
+            referencedRelation: "timeline_nodes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      timeline_nodes: {
+        Row: {
+          client_timeline_id: string
+          color: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          glow_color: string | null
+          height: number | null
+          icon: string | null
+          id: string
+          is_locked: boolean | null
+          metadata: Json | null
+          node_shape: Database["public"]["Enums"]["node_shape"]
+          node_type: Database["public"]["Enums"]["node_type"]
+          position_x: number
+          position_y: number
+          title: string
+          updated_at: string
+          width: number | null
+        }
+        Insert: {
+          client_timeline_id: string
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          glow_color?: string | null
+          height?: number | null
+          icon?: string | null
+          id?: string
+          is_locked?: boolean | null
+          metadata?: Json | null
+          node_shape?: Database["public"]["Enums"]["node_shape"]
+          node_type?: Database["public"]["Enums"]["node_type"]
+          position_x?: number
+          position_y?: number
+          title: string
+          updated_at?: string
+          width?: number | null
+        }
+        Update: {
+          client_timeline_id?: string
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          glow_color?: string | null
+          height?: number | null
+          icon?: string | null
+          id?: string
+          is_locked?: boolean | null
+          metadata?: Json | null
+          node_shape?: Database["public"]["Enums"]["node_shape"]
+          node_type?: Database["public"]["Enums"]["node_type"]
+          position_x?: number
+          position_y?: number
+          title?: string
+          updated_at?: string
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timeline_nodes_client_timeline_id_fkey"
+            columns: ["client_timeline_id"]
+            isOneToOne: false
+            referencedRelation: "client_timelines"
             referencedColumns: ["id"]
           },
         ]
@@ -679,6 +1025,24 @@ export type Database = {
     }
     Enums: {
       app_role: "ADMIN" | "CLIENTE"
+      node_shape:
+        | "rectangle"
+        | "circle"
+        | "diamond"
+        | "hexagon"
+        | "rounded"
+        | "custom"
+      node_type:
+        | "service"
+        | "product"
+        | "deliverable"
+        | "link"
+        | "document"
+        | "media"
+        | "youtube"
+        | "kanban"
+        | "milestone"
+        | "custom"
       template_item_category:
         | "FASE"
         | "MES"
@@ -818,6 +1182,26 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["ADMIN", "CLIENTE"],
+      node_shape: [
+        "rectangle",
+        "circle",
+        "diamond",
+        "hexagon",
+        "rounded",
+        "custom",
+      ],
+      node_type: [
+        "service",
+        "product",
+        "deliverable",
+        "link",
+        "document",
+        "media",
+        "youtube",
+        "kanban",
+        "milestone",
+        "custom",
+      ],
       template_item_category: [
         "FASE",
         "MES",
