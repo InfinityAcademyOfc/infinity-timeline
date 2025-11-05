@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { SEOHelmet } from '@/components/SEOHelmet';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,6 +27,7 @@ interface ParsedTimeline {
 }
 
 const AdminTimelines = () => {
+  const navigate = useNavigate();
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isImporting, setIsImporting] = useState(false);
@@ -299,7 +301,7 @@ const AdminTimelines = () => {
               </DialogContent>
             </Dialog>
 
-            <Button size="lg" className="bg-gradient-primary hover:bg-primary-hover shadow-lg">
+            <Button size="lg" onClick={() => navigate('/admin/templates/flow/new')} className="bg-gradient-primary hover:bg-primary-hover shadow-lg">
               <Plus className="h-5 w-5 mr-2" />
               Criar Novo Cronograma
             </Button>
@@ -346,7 +348,7 @@ const AdminTimelines = () => {
                       {new Date(template.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" onClick={() => navigate(`/admin/templates/flow/${template.id}`)}>
                         Editar
                       </Button>
                     </TableCell>

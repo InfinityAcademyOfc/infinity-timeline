@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { SEOHelmet } from '@/components/SEOHelmet';
 import { AppLayout } from '@/components/AppLayout';
 import { Button } from '@/components/ui/button';
@@ -80,6 +81,7 @@ const SortableItem = ({ item, onEdit, onDelete }: { item: TemplateItem; onEdit: 
 };
 
 const AdminTemplates = () => {
+  const navigate = useNavigate();
   const [templateName, setTemplateName] = useState('');
   const [templateDescription, setTemplateDescription] = useState('');
   const [durationMonths, setDurationMonths] = useState(12);
@@ -262,6 +264,11 @@ const AdminTemplates = () => {
               Construa cronogramas visuais com arrastar e soltar
             </p>
           </div>
+
+          <Button size="lg" onClick={() => navigate('/admin/templates/flow/new')} className="bg-gradient-primary hover:bg-primary-hover shadow-glow">
+            <Plus className="h-5 w-5 mr-2" />
+            Novo Template Visual
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -443,11 +450,23 @@ const AdminTemplates = () => {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {templates?.map((template) => (
-                <Card key={template.id} className="hover:shadow-glow transition-all">
+                <Card 
+                  key={template.id} 
+                  className="hover:shadow-glow transition-all cursor-pointer group"
+                  onClick={() => navigate(`/admin/templates/flow/${template.id}`)}
+                >
                   <CardContent className="p-4">
-                    <h4 className="font-semibold mb-1">{template.name}</h4>
+                    <div className="flex items-start justify-between mb-2">
+                      <h4 className="font-semibold group-hover:text-primary transition-colors">{template.name}</h4>
+                      <Badge variant="outline">{template.duration_months} meses</Badge>
+                    </div>
                     <p className="text-sm text-muted-foreground mb-3">{template.description}</p>
-                    <Badge variant="outline">{template.duration_months} meses</Badge>
+                    <Button size="sm" variant="outline" className="w-full" onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/admin/templates/flow/${template.id}`);
+                    }}>
+                      Editar no Flow
+                    </Button>
                   </CardContent>
                 </Card>
               ))}

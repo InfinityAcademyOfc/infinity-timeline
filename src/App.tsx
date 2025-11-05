@@ -16,6 +16,7 @@ import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminClients from "./pages/admin/AdminClients";
 import AdminTemplates from "./pages/admin/AdminTemplates";
+import AdminTemplateFlowEditor from "./pages/admin/AdminTemplateFlowEditor";
 import AdminTimelines from "./pages/admin/AdminTimelines";
 import AdminClientDetails from "./pages/admin/AdminClientDetails";
 
@@ -61,6 +62,16 @@ const App = () => (
               <Route path="/admin/templates" element={
                 <ProtectedRoute requireAdmin>
                   <AdminTemplates />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/templates/flow/new" element={
+                <ProtectedRoute requireAdmin>
+                  <AdminTemplateFlowEditor />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/templates/flow/:templateId" element={
+                <ProtectedRoute requireAdmin>
+                  <AdminTemplateFlowEditor />
                 </ProtectedRoute>
               } />
               <Route path="/admin/timelines" element={
