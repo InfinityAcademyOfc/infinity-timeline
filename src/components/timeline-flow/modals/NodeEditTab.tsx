@@ -12,6 +12,7 @@ import { Save, Trash2 } from 'lucide-react';
 
 interface NodeEditTabProps {
   node: Node;
+  isTemplateMode: boolean;
   isAdmin: boolean;
   onUpdate: () => void;
 }
@@ -24,7 +25,7 @@ const shapeOptions = [
   { value: 'hexagon', label: 'Hexágono' },
 ];
 
-export default function NodeEditTab({ node, isAdmin, onUpdate }: NodeEditTabProps) {
+export default function NodeEditTab({ node, isTemplateMode, isAdmin, onUpdate }: NodeEditTabProps) {
   const [title, setTitle] = useState(String(node.data.title || ''));
   const [description, setDescription] = useState(String(node.data.description || ''));
   const [color, setColor] = useState(String(node.data.color || '#00f5ff'));
@@ -33,8 +34,10 @@ export default function NodeEditTab({ node, isAdmin, onUpdate }: NodeEditTabProp
 
   const updateMutation = useMutation({
     mutationFn: async (data: any) => {
+      const tableName = isTemplateMode ? 'timeline_template_nodes' : 'timeline_nodes';
+      
       const { error } = await supabase
-        .from('timeline_nodes')
+        .from(tableName as any)
         .update(data)
         .eq('id', node.id);
       
@@ -51,8 +54,10 @@ export default function NodeEditTab({ node, isAdmin, onUpdate }: NodeEditTabProp
 
   const deleteMutation = useMutation({
     mutationFn: async () => {
+      const tableName = isTemplateMode ? 'timeline_template_nodes' : 'timeline_nodes';
+      
       const { error } = await supabase
-        .from('timeline_nodes')
+        .from(tableName as any)
         .delete()
         .eq('id', node.id);
       

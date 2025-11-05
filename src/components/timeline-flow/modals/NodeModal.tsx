@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Node } from '@xyflow/react';
@@ -10,7 +10,9 @@ import NodeKanbanTab from './NodeKanbanTab';
 
 interface NodeModalProps {
   node: Node;
-  clientTimelineId: string;
+  clientTimelineId?: string;
+  templateId?: string;
+  isTemplateMode: boolean;
   isAdmin: boolean;
   onClose: () => void;
   onUpdate: () => void;
@@ -19,6 +21,8 @@ interface NodeModalProps {
 export default function NodeModal({
   node,
   clientTimelineId,
+  templateId,
+  isTemplateMode,
   isAdmin,
   onClose,
   onUpdate,
@@ -49,6 +53,7 @@ export default function NodeModal({
           <TabsContent value="details">
             <NodeEditTab
               node={node}
+              isTemplateMode={isTemplateMode}
               isAdmin={isAdmin}
               onUpdate={onUpdate}
             />

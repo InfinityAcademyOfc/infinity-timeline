@@ -259,7 +259,7 @@ export default function AdminTemplateFlowEditor() {
       <div className="pt-20">
         {templateId ? (
           <TimelineFlowBuilderWrapper
-            clientTimelineId={templateId}
+            templateId={templateId}
             startDate={startDate}
             endDate={endDate}
             isAdmin={true}

@@ -1,29 +1,27 @@
-import { useCallback, useEffect, useState, useRef } from 'react';
-import {
-  ReactFlow,
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { 
+  ReactFlow, 
+  useNodesState, 
+  useEdgesState, 
+  Connection,
+  Node,
   Background,
   Controls,
   MiniMap,
-  addEdge,
-  useNodesState,
-  useEdgesState,
-  Connection,
-  Edge,
-  Node,
-  ReactFlowProvider,
-  BackgroundVariant,
   Panel,
+  BackgroundVariant,
+  ReactFlowProvider
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Plus, Save, Calendar } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { format, addDays, differenceInDays } from 'date-fns';
+import { differenceInDays, addDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Calendar, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
-// Import custom node types
+// Import node types
 import ServiceNode from './nodes/ServiceNode';
 import ProductNode from './nodes/ProductNode';
 import DeliverableNode from './nodes/DeliverableNode';
@@ -37,6 +35,7 @@ import CustomNode from './nodes/CustomNode';
 import NodeAddMenu from './NodeAddMenu';
 import NodeModal from './modals/NodeModal';
 
+// Define node types
 const nodeTypes = {
   service: ServiceNode,
   product: ProductNode,
@@ -51,7 +50,8 @@ const nodeTypes = {
 };
 
 interface TimelineFlowBuilderProps {
-  clientTimelineId: string;
+  clientTimelineId?: string;
+  templateId?: string;
   startDate: Date;
   endDate: Date;
   isAdmin: boolean;
@@ -59,10 +59,14 @@ interface TimelineFlowBuilderProps {
 
 export default function TimelineFlowBuilder({
   clientTimelineId,
+  templateId,
   startDate,
   endDate,
   isAdmin,
 }: TimelineFlowBuilderProps) {
+  const isTemplateMode = !!templateId;
+  const timelineId = isTemplateMode ? templateId : clientTimelineId;
+
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [showAddMenu, setShowAddMenu] = useState(false);
@@ -79,31 +83,39 @@ export default function TimelineFlowBuilder({
 
   // Fetch nodes
   const { data: nodesData } = useQuery({
-    queryKey: ['timeline-nodes', clientTimelineId],
+    queryKey: isTemplateMode ? ['timeline-template-nodes', templateId] : ['timeline-nodes', clientTimelineId],
     queryFn: async () => {
+      const tableName = isTemplateMode ? 'timeline_template_nodes' : 'timeline_nodes';
+      const idColumn = isTemplateMode ? 'template_id' : 'client_timeline_id';
+      
       const { data, error } = await supabase
-        .from('timeline_nodes')
+        .from(tableName as any)
         .select('*')
-        .eq('client_timeline_id', clientTimelineId)
+        .eq(idColumn, timelineId)
         .order('position_x');
       
       if (error) throw error;
-      return data;
+      return data as any[];
     },
+    enabled: !!timelineId,
   });
 
   // Fetch edges
   const { data: edgesData } = useQuery({
-    queryKey: ['timeline-edges', clientTimelineId],
+    queryKey: isTemplateMode ? ['timeline-template-edges', templateId] : ['timeline-edges', clientTimelineId],
     queryFn: async () => {
+      const tableName = isTemplateMode ? 'timeline_template_edges' : 'timeline_edges';
+      const idColumn = isTemplateMode ? 'template_id' : 'client_timeline_id';
+      
       const { data, error } = await supabase
-        .from('timeline_edges')
+        .from(tableName as any)
         .select('*')
-        .eq('client_timeline_id', clientTimelineId);
+        .eq(idColumn, timelineId);
       
       if (error) throw error;
-      return data;
+      return data as any[];
     },
+    enabled: !!timelineId,
   });
 
   // Convert database data to React Flow format
@@ -150,8 +162,10 @@ export default function TimelineFlowBuilder({
   // Save node position
   const saveNodePosition = useMutation({
     mutationFn: async ({ id, position }: { id: string; position: { x: number; y: number } }) => {
+      const tableName = isTemplateMode ? 'timeline_template_nodes' : 'timeline_nodes';
+      
       const { error } = await supabase
-        .from('timeline_nodes')
+        .from(tableName as any)
         .update({ position_x: position.x, position_y: position.y })
         .eq('id', id);
       
@@ -170,25 +184,32 @@ export default function TimelineFlowBuilder({
   // Handle connection
   const onConnect = useCallback(
     async (params: Connection) => {
+      const tableName = isTemplateMode ? 'timeline_template_edges' : 'timeline_edges';
+      const idColumn = isTemplateMode ? 'template_id' : 'client_timeline_id';
+      
+      const insertData: any = {
+        [idColumn]: timelineId,
+        source_node_id: params.source,
+        target_node_id: params.target,
+        color: '#00f5ff',
+        animated: true,
+      };
+
       const { error } = await supabase
-        .from('timeline_edges')
-        .insert({
-          client_timeline_id: clientTimelineId,
-          source_node_id: params.source,
-          target_node_id: params.target,
-          color: '#00f5ff',
-          animated: true,
-        });
+        .from(tableName as any)
+        .insert([insertData]);
 
       if (error) {
         toast.error('Erro ao criar conexão');
         return;
       }
 
-      queryClient.invalidateQueries({ queryKey: ['timeline-edges', clientTimelineId] });
+      queryClient.invalidateQueries({ 
+        queryKey: isTemplateMode ? ['timeline-template-edges', templateId] : ['timeline-edges', clientTimelineId] 
+      });
       toast.success('Conexão criada');
     },
-    [clientTimelineId, queryClient]
+    [isTemplateMode, timelineId, templateId, clientTimelineId, queryClient]
   );
 
   // Handle pane context menu (right-click to add node)
@@ -257,6 +278,8 @@ export default function TimelineFlowBuilder({
         minZoom={0.1}
         maxZoom={1.5}
         defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
+        translateExtent={[[-Infinity, -200], [Infinity, 200]]}
+        nodeExtent={[[-Infinity, -200], [Infinity, 200]]}
       >
         <Background
           variant={BackgroundVariant.Dots}
@@ -267,7 +290,7 @@ export default function TimelineFlowBuilder({
         />
         <Controls className="bg-background/80 backdrop-blur-sm border border-primary/20" />
         <MiniMap
-          className="bg-background/80 backdrop-blur-sm border border-primary/20"
+          className="!bg-background/80 !border !border-primary/20"
           nodeColor={(node) => {
             const nodeData = node.data as any;
             return nodeData.color || '#00f5ff';
@@ -291,9 +314,13 @@ export default function TimelineFlowBuilder({
         <NodeAddMenu
           position={menuPosition}
           clientTimelineId={clientTimelineId}
+          templateId={templateId}
+          isTemplateMode={isTemplateMode}
           onClose={() => setShowAddMenu(false)}
           onNodeAdded={() => {
-            queryClient.invalidateQueries({ queryKey: ['timeline-nodes', clientTimelineId] });
+            queryClient.invalidateQueries({ 
+              queryKey: isTemplateMode ? ['timeline-template-nodes', templateId] : ['timeline-nodes', clientTimelineId] 
+            });
             setShowAddMenu(false);
           }}
         />
@@ -303,10 +330,14 @@ export default function TimelineFlowBuilder({
         <NodeModal
           node={selectedNode}
           clientTimelineId={clientTimelineId}
+          templateId={templateId}
+          isTemplateMode={isTemplateMode}
           isAdmin={isAdmin}
           onClose={closeModal}
           onUpdate={() => {
-            queryClient.invalidateQueries({ queryKey: ['timeline-nodes', clientTimelineId] });
+            queryClient.invalidateQueries({ 
+              queryKey: isTemplateMode ? ['timeline-template-nodes', templateId] : ['timeline-nodes', clientTimelineId] 
+            });
             closeModal();
           }}
         />

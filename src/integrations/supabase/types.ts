@@ -903,6 +903,67 @@ export type Database = {
           },
         ]
       }
+      timeline_template_edges: {
+        Row: {
+          animated: boolean | null
+          color: string | null
+          created_at: string
+          id: string
+          label: string | null
+          source_node_id: string
+          style: string | null
+          target_node_id: string
+          template_id: string
+          updated_at: string
+        }
+        Insert: {
+          animated?: boolean | null
+          color?: string | null
+          created_at?: string
+          id?: string
+          label?: string | null
+          source_node_id: string
+          style?: string | null
+          target_node_id: string
+          template_id: string
+          updated_at?: string
+        }
+        Update: {
+          animated?: boolean | null
+          color?: string | null
+          created_at?: string
+          id?: string
+          label?: string | null
+          source_node_id?: string
+          style?: string | null
+          target_node_id?: string
+          template_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timeline_template_edges_source_node_id_fkey"
+            columns: ["source_node_id"]
+            isOneToOne: false
+            referencedRelation: "timeline_template_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timeline_template_edges_target_node_id_fkey"
+            columns: ["target_node_id"]
+            isOneToOne: false
+            referencedRelation: "timeline_template_nodes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timeline_template_edges_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "timeline_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       timeline_template_items: {
         Row: {
           category: Database["public"]["Enums"]["template_item_category"]
@@ -947,6 +1008,77 @@ export type Database = {
           },
           {
             foreignKeyName: "timeline_template_items_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "timeline_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      timeline_template_nodes: {
+        Row: {
+          color: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          glow_color: string | null
+          height: number | null
+          icon: string | null
+          id: string
+          is_locked: boolean | null
+          metadata: Json | null
+          node_shape: Database["public"]["Enums"]["node_shape"]
+          node_type: Database["public"]["Enums"]["node_type"]
+          position_x: number
+          position_y: number
+          template_id: string
+          title: string
+          updated_at: string
+          width: number | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          glow_color?: string | null
+          height?: number | null
+          icon?: string | null
+          id?: string
+          is_locked?: boolean | null
+          metadata?: Json | null
+          node_shape?: Database["public"]["Enums"]["node_shape"]
+          node_type?: Database["public"]["Enums"]["node_type"]
+          position_x?: number
+          position_y?: number
+          template_id: string
+          title: string
+          updated_at?: string
+          width?: number | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          glow_color?: string | null
+          height?: number | null
+          icon?: string | null
+          id?: string
+          is_locked?: boolean | null
+          metadata?: Json | null
+          node_shape?: Database["public"]["Enums"]["node_shape"]
+          node_type?: Database["public"]["Enums"]["node_type"]
+          position_x?: number
+          position_y?: number
+          template_id?: string
+          title?: string
+          updated_at?: string
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timeline_template_nodes_template_id_fkey"
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "timeline_templates"
