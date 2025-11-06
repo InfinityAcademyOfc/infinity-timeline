@@ -90,8 +90,11 @@ export function DraggableTimeline({ dates, onDatePositionsChange }: DraggableTim
   return (
     <div 
       id="timeline-container"
-      className="absolute top-0 left-0 right-0 z-10 h-20 bg-gradient-to-b from-background/95 to-transparent pointer-events-none"
+      className="absolute top-0 left-0 right-0 z-10 h-16 pointer-events-none"
     >
+      {/* Timeline base line */}
+      <div className="absolute top-6 left-0 right-0 h-0.5 bg-primary/20" />
+      
       <div className="relative h-full px-4">
         {timelineDates.map((timelineDate, index) => (
           <div
@@ -105,29 +108,22 @@ export function DraggableTimeline({ dates, onDatePositionsChange }: DraggableTim
             onMouseDown={handleMouseDown(index)}
           >
             <div className={cn(
-              "flex flex-col items-center gap-1 p-2 rounded-lg",
-              "bg-card/80 backdrop-blur-sm border border-primary/30",
+              "flex flex-col items-center gap-1 p-1.5 rounded-lg",
+              "bg-card/90 backdrop-blur-sm border border-primary/30",
               "hover:bg-card hover:border-primary/50 transition-all",
               "shadow-lg hover:shadow-glow"
             )}>
               <div className="flex items-center gap-1">
                 <GripVertical className="h-3 w-3 text-primary/60" />
-                <Calendar className="h-4 w-4 text-primary" />
+                <Calendar className="h-3 w-3 text-primary" />
               </div>
-              <span className="text-xs font-medium text-foreground whitespace-nowrap">
+              <span className="text-[10px] font-medium text-foreground whitespace-nowrap">
                 {format(timelineDate.date, 'MMM yyyy', { locale: ptBR })}
               </span>
             </div>
             
-            {/* Visual connection line */}
-            {index < timelineDates.length - 1 && (
-              <div 
-                className="absolute top-1/2 left-full h-0.5 bg-gradient-to-r from-primary/50 to-transparent"
-                style={{ 
-                  width: `${(timelineDates[index + 1].position - timelineDate.position) * window.innerWidth / 100}px` 
-                }}
-              />
-            )}
+            {/* Vertical line down to timeline */}
+            <div className="absolute top-full left-1/2 -translate-x-1/2 w-0.5 h-2 bg-primary/40" />
           </div>
         ))}
       </div>

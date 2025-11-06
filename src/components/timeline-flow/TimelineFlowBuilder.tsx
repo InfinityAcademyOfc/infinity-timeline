@@ -275,35 +275,14 @@ export default function TimelineFlowBuilder({
     <div className="relative h-screen w-full" ref={flowRef}>
       {/* Tools Sidebar */}
       {isAdmin && (
-        <>
-          <ToolsSidebar
-            onAddNode={() => setShowAddMenu(true)}
-            onAddText={handleAddText}
-            onAddNote={handleAddNote}
-            onAddGroup={handleAddGroup}
-            onAddBoard={handleAddBoard}
-            collapsed={sidebarCollapsed}
-          />
-          
-          {/* Sidebar Toggle */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className={cn(
-              "absolute top-1/2 -translate-y-1/2 z-20 bg-card/80 backdrop-blur-sm",
-              "border border-primary/20 hover:bg-card hover:border-primary/40",
-              "transition-all duration-300 shadow-lg",
-              sidebarCollapsed ? "left-14" : "left-56"
-            )}
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          >
-            {sidebarCollapsed ? (
-              <ChevronRight className="h-4 w-4 text-foreground" />
-            ) : (
-              <ChevronLeft className="h-4 w-4 text-foreground" />
-            )}
-          </Button>
-        </>
+        <ToolsSidebar
+          onAddNode={() => setShowAddMenu(true)}
+          onAddText={handleAddText}
+          onAddNote={handleAddNote}
+          onAddGroup={handleAddGroup}
+          onAddBoard={handleAddBoard}
+          collapsed={sidebarCollapsed}
+        />
       )}
 
       {/* Draggable Timeline */}
@@ -322,16 +301,12 @@ export default function TimelineFlowBuilder({
         onPaneContextMenu={onPaneContextMenu}
         nodeTypes={nodeTypes}
         fitView
-        className={cn(
-          "timeline-flow-neon transition-all duration-300",
-          isAdmin && !sidebarCollapsed && "ml-56",
-          isAdmin && sidebarCollapsed && "ml-14"
-        )}
+        className="timeline-flow-neon"
         minZoom={0.1}
         maxZoom={1.5}
         defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
-        translateExtent={[[-Infinity, -100], [Infinity, 100]]}
-        nodeExtent={[[-Infinity, -100], [Infinity, 100]]}
+        translateExtent={[[-Infinity, -Infinity], [Infinity, Infinity]]}
+        nodeExtent={[[-Infinity, -Infinity], [Infinity, Infinity]]}
       >
         <Background
           variant={BackgroundVariant.Dots}

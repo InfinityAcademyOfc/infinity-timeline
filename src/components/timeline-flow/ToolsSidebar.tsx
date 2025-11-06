@@ -60,38 +60,39 @@ export function ToolsSidebar({
   return (
     <div 
       className={cn(
-        "absolute left-0 top-0 bottom-0 z-20 bg-card/95 backdrop-blur-sm border-r border-primary/20",
+        "absolute left-2 bottom-2 z-20 bg-card/95 backdrop-blur-sm border border-primary/20 rounded-lg",
         "flex flex-col shadow-lg transition-all duration-300",
-        collapsed ? "w-14" : "w-56"
+        collapsed ? "w-10" : "w-40"
       )}
     >
       {/* Header */}
-      <div className="p-3 border-b border-primary/20">
+      <div className="p-2 border-b border-primary/20">
         <h3 className={cn(
-          "font-semibold text-foreground transition-opacity",
-          collapsed ? "opacity-0 text-[0px]" : "opacity-100 text-sm"
+          "font-semibold text-foreground transition-opacity text-xs",
+          collapsed ? "opacity-0 text-[0px]" : "opacity-100"
         )}>
           Ferramentas
         </h3>
       </div>
 
       {/* Tools */}
-      <div className="flex-1 p-2 space-y-1 overflow-y-auto">
+      <div className="flex-1 p-1 space-y-0.5 overflow-y-auto">
         {tools.map((tool, index) => (
           <Button
             key={index}
             onClick={tool.onClick}
             variant="ghost"
+            size="sm"
             className={cn(
-              "w-full justify-start gap-3 text-foreground hover:bg-primary/10 hover:text-primary",
-              "transition-all duration-200 group relative",
+              "w-full justify-start gap-2 text-foreground hover:bg-primary/10 hover:text-primary h-8",
+              "transition-all duration-200 group relative text-xs",
               collapsed && "justify-center px-0"
             )}
             title={collapsed ? tool.tooltip : undefined}
           >
-            <tool.icon className="h-4 w-4 flex-shrink-0 text-primary group-hover:scale-110 transition-transform" />
+            <tool.icon className="h-3 w-3 flex-shrink-0 text-primary group-hover:scale-110 transition-transform" />
             <span className={cn(
-              "transition-opacity text-sm",
+              "transition-opacity",
               collapsed ? "opacity-0 absolute" : "opacity-100"
             )}>
               {tool.label}
@@ -99,9 +100,9 @@ export function ToolsSidebar({
             
             {/* Tooltip for collapsed state */}
             {collapsed && (
-              <div className="absolute left-full ml-2 px-3 py-1.5 bg-popover border border-primary/20 rounded-md
+              <div className="absolute left-full ml-2 px-2 py-1 bg-popover border border-primary/20 rounded-md
                             opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity
-                            whitespace-nowrap text-sm text-popover-foreground shadow-lg z-50">
+                            whitespace-nowrap text-xs text-popover-foreground shadow-lg z-50">
                 {tool.label}
               </div>
             )}
@@ -113,18 +114,19 @@ export function ToolsSidebar({
       {showBackButton && onBack && (
         <>
           <Separator className="bg-primary/20" />
-          <div className="p-2">
+          <div className="p-1">
             <Button
               onClick={onBack}
               variant="outline"
+              size="sm"
               className={cn(
-                "w-full justify-start gap-3 text-foreground border-primary/20 hover:bg-primary/10",
+                "w-full justify-start gap-2 text-foreground border-primary/20 hover:bg-primary/10 h-8 text-xs",
                 collapsed && "justify-center px-0"
               )}
             >
-              <ArrowLeft className="h-4 w-4 flex-shrink-0" />
+              <ArrowLeft className="h-3 w-3 flex-shrink-0" />
               <span className={cn(
-                "transition-opacity text-sm",
+                "transition-opacity",
                 collapsed ? "opacity-0 absolute" : "opacity-100"
               )}>
                 Voltar

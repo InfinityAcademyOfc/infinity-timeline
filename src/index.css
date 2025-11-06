@@ -16,11 +16,11 @@
     --popover: 220 25% 10%;
     --popover-foreground: 210 40% 98%;
 
-    /* Primary - Neon Blue */
-    --primary: 217 91% 65%;             /* Azul neon */
+    /* Primary - Cyan Neon */
+    --primary: 180 100% 50%;            /* Cyan neon */
     --primary-foreground: 220 25% 5%;
-    --primary-glow: 220 100% 75%;       /* Glow effect */
-    --primary-hover: 217 91% 70%;
+    --primary-glow: 180 100% 60%;       /* Glow effect */
+    --primary-hover: 180 100% 55%;
 
     /* Secondary - Cyan Electric Blue */
     --secondary: 190 85% 55%;
@@ -43,7 +43,8 @@
 
     --border: 220 20% 18%;
     --input: 220 20% 18%;
-    --ring: 217 91% 65%;
+    --input-foreground: 210 40% 98%;
+    --ring: 180 100% 50%;
 
     /* Timeline specific colors */
     --timeline-pending: 43 96% 56%;
