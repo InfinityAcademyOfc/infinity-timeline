@@ -121,19 +121,25 @@ export default function TimelineFlowBuilder({
   // Convert database data to React Flow format
   useEffect(() => {
     if (nodesData) {
-      const flowNodes = nodesData.map((node) => ({
-        id: node.id,
-        type: node.node_type,
-        position: { x: node.position_x, y: node.position_y },
-        data: {
-          ...node,
-          onEdit: () => handleNodeClick(node as any),
-        },
-        style: {
-          width: node.width,
-          height: node.height,
-        },
-      }));
+      const flowNodes = nodesData.map((node) => {
+        const flowNode: Node = {
+          id: node.id,
+          type: node.node_type,
+          position: { x: node.position_x, y: node.position_y },
+          data: {
+            ...node,
+          },
+          style: {
+            width: node.width,
+            height: node.height,
+          },
+        };
+        
+        // Add onEdit callback that passes the complete flow node
+        flowNode.data.onEdit = () => handleNodeClick(flowNode);
+        
+        return flowNode;
+      });
       setNodes(flowNodes);
     }
   }, [nodesData]);
