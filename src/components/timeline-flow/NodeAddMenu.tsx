@@ -86,49 +86,40 @@ export default function NodeAddMenu({
       
       {/* Menu */}
       <Card
-        className="fixed z-50 p-6 shadow-2xl border-primary/20 bg-gradient-to-br from-background/98 to-primary/5 backdrop-blur-md"
+        className="fixed z-50 w-80 shadow-2xl border-primary/40 bg-card/98 backdrop-blur-md"
         style={{
           left: `${position.x}px`,
           top: `${position.y}px`,
         }}
       >
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-base font-semibold text-primary">Adicionar Nó</h3>
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-primary/20">
+          <h3 className="text-sm font-semibold text-foreground">Selecione o tipo de nó</h3>
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
+            className="h-6 w-6 hover:bg-primary/10"
             onClick={onClose}
-            className="h-6 w-6 p-0 hover:bg-primary/10"
           >
-            <X className="h-4 w-4" />
+            <X className="h-4 w-4 text-foreground" />
           </Button>
         </div>
-        <div className="grid grid-cols-3 gap-3">
+        
+        {/* Node types grid */}
+        <div className="grid grid-cols-2 gap-2 p-4">
           {nodeTypeOptions.map((option) => {
             const Icon = option.icon;
             return (
               <Button
                 key={option.type}
-                variant="outline"
-                size="sm"
                 onClick={() => handleAddNode(option.type, option.color)}
                 disabled={creating}
-                className="flex flex-col items-center gap-2 h-auto py-4 hover:scale-105 transition-all duration-200 border-2 hover:shadow-lg"
-                style={{ 
-                  borderColor: `${option.color}40`,
-                  backgroundColor: `${option.color}10`
-                }}
+                className="h-auto py-4 px-3 flex flex-col items-center gap-2 bg-primary/5 hover:bg-primary/15 border border-primary/30 hover:border-primary/50 transition-all"
               >
-                <div 
-                  className="p-2 rounded-lg"
-                  style={{ 
-                    backgroundColor: `${option.color}20`,
-                    boxShadow: `0 0 15px ${option.color}40`
-                  }}
-                >
-                  <Icon className="h-5 w-5" style={{ color: option.color }} />
-                </div>
-                <span className="text-xs font-medium">{option.label}</span>
+                <Icon className="h-6 w-6" style={{ color: option.color }} />
+                <span className="text-xs text-center font-medium text-foreground">
+                  {option.label}
+                </span>
               </Button>
             );
           })}

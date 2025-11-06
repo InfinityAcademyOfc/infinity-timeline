@@ -27,8 +27,8 @@
     --secondary-foreground: 220 25% 5%;
     --secondary-hover: 190 85% 60%;
 
-    --muted: 220 20% 15%;
-    --muted-foreground: 210 20% 60%;
+  --muted: 220 20% 15%;
+  --muted-foreground: 210 40% 85%; /* Texto mais claro para melhor contraste */
 
     --accent: 190 85% 55%;
     --accent-foreground: 220 25% 5%;
@@ -232,10 +232,15 @@
 /* Timeline Flow Neon Styles */
 .timeline-flow-neon .react-flow__node {
   transition: all 0.3s ease;
+  color: hsl(var(--foreground)) !important;
 }
 
 .timeline-flow-neon .react-flow__node:hover {
-  transform: scale(1.05);
+  filter: drop-shadow(0 0 10px rgba(0, 245, 255, 0.5));
+}
+
+.timeline-flow-neon .react-flow__node * {
+  color: hsl(var(--foreground)) !important;
 }
 
 .timeline-flow-neon .react-flow__edge-path {
@@ -268,12 +273,33 @@
 }
 
 .react-flow__controls button {
-  background: hsl(var(--background)) !important;
+  background: hsl(var(--card)) !important;
   border-color: hsl(var(--primary) / 0.3) !important;
-  color: hsl(var(--primary)) !important;
+  color: hsl(var(--foreground)) !important;
+}
+
+.react-flow__controls button:hover {
+  background: hsl(var(--primary) / 0.2) !important;
+}
+
+.react-flow__controls button svg {
+  fill: hsl(var(--foreground)) !important;
 }
 
 .react-flow__minimap {
-  background: hsl(var(--background) / 0.8) !important;
+  background: hsl(var(--card) / 0.8) !important;
   border: 1px solid hsl(var(--primary) / 0.2);
+}
+
+/* Garantir texto visível em todos os componentes */
+input, textarea, select {
+  color: hsl(var(--foreground)) !important;
+}
+
+label {
+  color: hsl(var(--foreground)) !important;
+}
+
+.react-flow__attribution {
+  color: hsl(var(--muted-foreground)) !important;
 }

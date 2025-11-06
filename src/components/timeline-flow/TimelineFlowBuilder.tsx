@@ -18,8 +18,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { differenceInDays, addDays, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Calendar, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ToolsSidebar } from './ToolsSidebar';
+import { DraggableTimeline } from './DraggableTimeline';
+import { cn } from '@/lib/utils';
 
 // Import node types
 import ServiceNode from './nodes/ServiceNode';
@@ -72,6 +75,8 @@ export default function TimelineFlowBuilder({
   const [showAddMenu, setShowAddMenu] = useState(false);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [datePositions, setDatePositions] = useState<number[]>([]);
   const queryClient = useQueryClient();
   const flowRef = useRef<HTMLDivElement>(null);
 
@@ -244,31 +249,68 @@ export default function TimelineFlowBuilder({
     setSelectedNode(null);
   };
 
-  // Calculate date position on timeline
-  const getDatePosition = (date: Date) => {
-    const daysSinceStart = differenceInDays(date, startDate);
-    return (daysSinceStart / totalDays) * 100;
+  // Handle date positions change
+  const handleDatePositionsChange = (positions: number[]) => {
+    setDatePositions(positions);
+  };
+
+  // Tool handlers
+  const handleAddText = () => {
+    toast.info('Funcionalidade em desenvolvimento');
+  };
+
+  const handleAddNote = () => {
+    toast.info('Funcionalidade em desenvolvimento');
+  };
+
+  const handleAddGroup = () => {
+    toast.info('Funcionalidade em desenvolvimento');
+  };
+
+  const handleAddBoard = () => {
+    toast.info('Funcionalidade em desenvolvimento');
   };
 
   return (
     <div className="relative h-screen w-full" ref={flowRef}>
-      {/* Timeline dates header */}
-      <div className="absolute top-0 left-0 right-0 z-10 h-16 bg-gradient-to-b from-background to-transparent pointer-events-none">
-        <div className="flex items-center justify-between px-4 h-full">
-          {timelineDates.map((date, index) => (
-            <div
-              key={index}
-              className="flex flex-col items-center text-xs text-primary font-medium pointer-events-auto"
-              style={{ left: `${getDatePosition(date)}%` }}
-            >
-              <Calendar className="h-4 w-4 mb-1 text-primary" />
-              <span className="whitespace-nowrap">
-                {format(date, 'MMM yyyy', { locale: ptBR })}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* Tools Sidebar */}
+      {isAdmin && (
+        <>
+          <ToolsSidebar
+            onAddNode={() => setShowAddMenu(true)}
+            onAddText={handleAddText}
+            onAddNote={handleAddNote}
+            onAddGroup={handleAddGroup}
+            onAddBoard={handleAddBoard}
+            collapsed={sidebarCollapsed}
+          />
+          
+          {/* Sidebar Toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(
+              "absolute top-1/2 -translate-y-1/2 z-20 bg-card/80 backdrop-blur-sm",
+              "border border-primary/20 hover:bg-card hover:border-primary/40",
+              "transition-all duration-300 shadow-lg",
+              sidebarCollapsed ? "left-14" : "left-56"
+            )}
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          >
+            {sidebarCollapsed ? (
+              <ChevronRight className="h-4 w-4 text-foreground" />
+            ) : (
+              <ChevronLeft className="h-4 w-4 text-foreground" />
+            )}
+          </Button>
+        </>
+      )}
+
+      {/* Draggable Timeline */}
+      <DraggableTimeline 
+        dates={timelineDates} 
+        onDatePositionsChange={handleDatePositionsChange}
+      />
 
       <ReactFlow
         nodes={nodes}
@@ -280,40 +322,35 @@ export default function TimelineFlowBuilder({
         onPaneContextMenu={onPaneContextMenu}
         nodeTypes={nodeTypes}
         fitView
-        className="timeline-flow-neon"
+        className={cn(
+          "timeline-flow-neon transition-all duration-300",
+          isAdmin && !sidebarCollapsed && "ml-56",
+          isAdmin && sidebarCollapsed && "ml-14"
+        )}
         minZoom={0.1}
         maxZoom={1.5}
         defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
-        translateExtent={[[-Infinity, -200], [Infinity, 200]]}
-        nodeExtent={[[-Infinity, -200], [Infinity, 200]]}
+        translateExtent={[[-Infinity, -100], [Infinity, 100]]}
+        nodeExtent={[[-Infinity, -100], [Infinity, 100]]}
       >
         <Background
           variant={BackgroundVariant.Dots}
           gap={20}
           size={1}
-          color="rgba(0, 245, 255, 0.2)"
+          color="rgba(0, 245, 255, 0.15)"
           className="bg-background"
         />
-        <Controls className="bg-background/80 backdrop-blur-sm border border-primary/20" />
+        <Controls 
+          className="bg-card/80 backdrop-blur-sm border border-primary/20 text-foreground"
+        />
         <MiniMap
-          className="!bg-background/80 !border !border-primary/20"
+          className="!bg-card/80 !border !border-primary/20"
           nodeColor={(node) => {
             const nodeData = node.data as any;
             return nodeData.color || '#00f5ff';
           }}
+          maskColor="rgba(0, 0, 0, 0.6)"
         />
-        
-        {isAdmin && (
-          <Panel position="top-right" className="m-4">
-            <Button
-              onClick={() => setShowAddMenu(!showAddMenu)}
-              className="bg-primary/20 hover:bg-primary/30 border-primary text-primary shadow-glow"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Adicionar Nó
-            </Button>
-          </Panel>
-        )}
       </ReactFlow>
 
       {showAddMenu && isAdmin && (
